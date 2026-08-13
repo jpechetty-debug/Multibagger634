@@ -150,6 +150,9 @@ class MarketDataProvider:
             # Let's map roughly: < 13 Bull, > 18 Bear
             
             details['vix'] = current_vix
+            # Export the dynamic threshold for the risk governor
+            details['vix_relative_limit'] = vix_threshold
+            
             if current_vix < 13.5: # Approx 30th percentile
                 votes['BULL'] += 1
                 details['vix_vote'] = 'BULL'

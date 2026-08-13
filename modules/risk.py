@@ -24,7 +24,7 @@ class RiskGovernor:
     def get_dynamic_slippage_bps(self, tier, theoretical_bps):
         """
         Phase 50: Returns effective slippage based on real-world p95.
-        Auto-tightens if observed execution is worse than model.
+        Auto-tightens if observed execution is worse than model using EMA blend.
         """
         if not self.execution_analyzer:
             return theoretical_bps
@@ -32,11 +32,11 @@ class RiskGovernor:
         observed_p95 = self.execution_analyzer.get_calibrated_slippage(tier)
         
         if observed_p95:
-            # Safety Rule: Never go below theoretical unless validated (omitted for now)
-            # We strictly take the MAX for safety.
-            effective = max(theoretical_bps, observed_p95)
+            # Shift from pessimistic MAX to a 70/30 EMA blend for institutional smoothing
+            effective = (theoretical_bps * 0.7) + (observed_p95 * 0.3)
+            
             if effective > theoretical_bps:
-                print(f"⚠️ RISK GOVERNOR: Slippage Inflation Active for {tier}. Model: {theoretical_bps}bps -> Real: {effective:.0f}bps")
+                print(f"⚠️ RISK GOVERNOR: Slippage Calibration Active for {tier}. Model: {theoretical_bps}bps -> EMA: {effective:.0f}bps")
             return effective
             
         return theoretical_bps
@@ -44,7 +44,7 @@ class RiskGovernor:
     def check_kill_switch(self, current_vix, dynamic_threshold=None, drawdown_rate_weekly=None):
         """
         Hard Kill Switch: If VIX > Limit, halt all NEW buying.
-        Uses Dynamic Threshold if provided, else Static.
+        Uses Regime-Relative Dynamic Threshold if provided, else Static.
         Returns: (is_safe, message)
         """
         if drawdown_rate_weekly is not None and drawdown_rate_weekly > self.drawdown_rate_kill_weekly:
@@ -55,11 +55,12 @@ class RiskGovernor:
             self.log_rejected_trade("PORTFOLIO", msg, drawdown_rate_weekly)
             return False, msg
 
-        limit = dynamic_threshold if dynamic_threshold else self.hard_kill_vix
+        # Heavily prefer dynamic threshold (Regime Relative VIX) for Institutional scaling
+        limit = dynamic_threshold if dynamic_threshold is not None else self.hard_kill_vix
         
         if current_vix > limit:
-            self.log_rejected_trade("PORTFOLIO", f"Kill Switch Active: VIX {current_vix:.2f} > {limit:.2f}", current_vix)
-            return False, f"KILL SWITCH ACTIVE: VIX ({current_vix:.2f}) > {limit:.2f}"
+            self.log_rejected_trade("PORTFOLIO", f"Kill Switch Active: VIX {current_vix:.2f} > Limit {limit:.2f}", current_vix)
+            return False, f"KILL SWITCH ACTIVE: VIX ({current_vix:.2f}) > Limit {limit:.2f}"
         return True, "Market conditions safe"
 
     def validate_portfolio_allocation(self, portfolio):
@@ -277,7 +278,7 @@ class RiskGovernor:
         try:
             print(f"[BLACK BOX] Rejected {symbol} -> {reason}")
         except Exception as e:
-            import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+            import logging; logging.getLogger(__name__).warning("risk failed: %s", e)
 
             pass
 

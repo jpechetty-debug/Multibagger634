@@ -28,6 +28,25 @@ def normalize_metric(value, min_val, max_val, invert=False):
     else:
         return sigmoid_val * 100.0
 
+def normalize_zscore(value, mean, std, invert=False):
+    """
+    Normalizes a metric using Cross-Sectional Z-Score and a Sigmoid function.
+    Provides robust scoring across different market regimes.
+    """
+    if value is None or not np.isfinite(value) or std is None or std == 0:
+        return 0
+    
+    z = (value - mean) / std
+    z = max(-4.0, min(4.0, z))
+    
+    # Sigmoid function, scaled so Z=2 is ~95%, Z=-2 is ~5%
+    sigmoid_val = 1.0 / (1.0 + np.exp(-z * 1.5))
+    
+    if invert:
+        return (1.0 - sigmoid_val) * 100.0
+    else:
+        return sigmoid_val * 100.0
+
 def calculate_sector_medians(results):
     """Compute median ROE, Sales Growth, PE per sector for relative scoring."""
     sector_data = {}
@@ -56,10 +75,11 @@ def calculate_sector_medians(results):
         }
     return medians
 
-def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral", sector_medians=None):
+def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral", sector_medians=None, cross_sectional_stats=None):
     """
     Calculates a 'Composite Institutional Score' out of 100.
     Phase 23: Dynamic Factor Weights based on Market Regime.
+    Uses Cross-Sectional Z-Scores for relative ranking when available.
     """
     mode = market_regime.lower() if market_regime else "balanced"
     
@@ -79,11 +99,21 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     w_de = weights["w_de"]
     w_mom = weights["w_mom"]
     
+    # helper to fetch stats or fallback
+    def get_stats(metric_name, fallback_min, fallback_max):
+        if cross_sectional_stats and metric_name in cross_sectional_stats:
+            return cross_sectional_stats[metric_name]
+        return None
+
     # --- V6.0: METRIC CALCULATION (Pre-Scoring) ---
     # 1. Sales Growth
     # (used in V6.0 sector relative scoring)
     sg_val = data.get("Sales_Growth_5Y%", 0) or data.get("Sales_Growth_TTM%", 0) or 0
-    score_sales = normalize_metric(data.get("Sales_Growth_5Y%", 0), 0, 40)
+    sales_stats = get_stats("Sales_Growth_5Y%", 0, 40)
+    if sales_stats:
+        score_sales = normalize_zscore(sg_val, sales_stats["mean"], sales_stats["std"])
+    else:
+        score_sales = normalize_metric(sg_val, 0, 40)
 
     # 2. ROE (with cascading fallback + V3.1 confidence penalty)
     roe_5y = data.get("Avg_ROE_5Y%", 0)
@@ -106,16 +136,36 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
         best_roe = 0
         roe_confidence = 0.0
     
-    score_roe = normalize_metric(roe_val, 10, 30) * roe_confidence
+    roe_stats = get_stats("Avg_ROE_5Y%", 10, 30)
+    if roe_stats:
+        score_roe = normalize_zscore(roe_val, roe_stats["mean"], roe_stats["std"]) * roe_confidence
+    else:
+        score_roe = normalize_metric(roe_val, 10, 30) * roe_confidence
     
     # 3. CFO / PAT
-    score_cfo = normalize_metric(data.get("CFO_PAT_Ratio", 0), 0.5, 1.5)
+    cfo_stats = get_stats("CFO_PAT_Ratio", 0.5, 1.5)
+    cfo_val = data.get("CFO_PAT_Ratio", 0)
+    if cfo_stats:
+        score_cfo = normalize_zscore(cfo_val, cfo_stats["mean"], cfo_stats["std"])
+    else:
+        score_cfo = normalize_metric(cfo_val, 0.5, 1.5)
     
     # 4. Valuation
     pe = data.get("PE_Ratio")
     peg = data.get("PEG_Ratio")
-    score_pe = normalize_metric(pe, 15, 60, invert=True) if (pe is not None and pe > 0) else 0
-    score_peg = normalize_metric(peg, 0.8, 2.5, invert=True) if (peg is not None and peg > 0) else 0
+    pe_stats = get_stats("PE_Ratio", 15, 60)
+    peg_stats = get_stats("PEG_Ratio", 0.8, 2.5)
+    
+    if pe_stats and pe is not None and pe > 0:
+        score_pe = normalize_zscore(pe, pe_stats["mean"], pe_stats["std"], invert=True)
+    else:
+        score_pe = normalize_metric(pe, 15, 60, invert=True) if (pe is not None and pe > 0) else 0
+        
+    if peg_stats and peg is not None and peg > 0:
+        score_peg = normalize_zscore(peg, peg_stats["mean"], peg_stats["std"], invert=True)
+    else:
+        score_peg = normalize_metric(peg, 0.8, 2.5, invert=True) if (peg is not None and peg > 0) else 0
+
     # Smart valuation: use what's available
     if score_pe > 0 and score_peg > 0:
         score_val = (score_pe * 0.5) + (score_peg * 0.5)
@@ -125,7 +175,12 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
         score_val = score_peg  # PEG-only (unlikely)
     
     # 5. EPS Growth
-    score_eps = normalize_metric(data.get("EPS_Growth%", 0), 5, 30)
+    eps_stats = get_stats("EPS_Growth%", 5, 30)
+    eps_val = data.get("EPS_Growth%", 0)
+    if eps_stats:
+        score_eps = normalize_zscore(eps_val, eps_stats["mean"], eps_stats["std"])
+    else:
+        score_eps = normalize_metric(eps_val, 5, 30)
     
     # 6. F-Score (0-9)
     f_score_val = data.get("F_Score")
@@ -133,15 +188,24 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     score_fscore = (f_score_val / 9.0) * 100
     
     # 7. Debt / Equity
+    de_val = data.get("Debt_Equity", 0)
+    de_stats = get_stats("Debt_Equity", 0, 1.0)
     if "Bank" in data.get("Sector", "") or "Financial" in data.get("Sector", ""):
         score_de = 80 
     else:
-        score_de = normalize_metric(data.get("Debt_Equity", 0), 0, 1.0, invert=True)
+        if de_stats:
+            score_de = normalize_zscore(de_val, de_stats["mean"], de_stats["std"], invert=True)
+        else:
+            score_de = normalize_metric(de_val, 0, 1.0, invert=True)
         
     # 8. Momentum
     down_from_high = data.get("Down_From_52W_High%", 0)
     price = data.get("Price", 0) or 0
-    score_mom_tech = normalize_metric(down_from_high, 0, 40, invert=True) if price > 0 else 0
+    mom_stats = get_stats("Down_From_52W_High%", 0, 40)
+    if mom_stats and price > 0:
+        score_mom_tech = normalize_zscore(down_from_high, mom_stats["mean"], mom_stats["std"], invert=True)
+    else:
+        score_mom_tech = normalize_metric(down_from_high, 0, 40, invert=True) if price > 0 else 0
     
     rs_rating = data.get("RS_Rating")
     if rs_rating is None: rs_rating = 0
@@ -611,11 +675,15 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     final_score = min(base_score, score_ceiling)
     
     # --- PHASE 4: DETERMINISTIC TIE-BREAKER (Institutional Requirement) ---
-    # Add a microscopic deterministic epsilon based on symbol hash to prevent ranking draws
-    # This ensures two stocks with the same fundamental score have a stable, non-random order
-    import hashlib
-    sym_hash = int(hashlib.md5(data.get("Symbol", "").encode()).hexdigest(), 16) % 1000
-    epsilon = sym_hash / 100000.0 # Range 0.00000 to 0.00999
+    # Tie-breaker using volatility (ATR/Price) rather than arbitrary symbol hash
+    # Lower volatility gives a slightly higher micro-score
+    atr = data.get("ATR", 0) or 0
+    price_val = data.get("Price", 1) or 1
+    if price_val > 0:
+        atr_pct = atr / price_val
+        epsilon = max(0, 0.00999 - min(atr_pct, 0.00999)) # Range 0.00000 to 0.00999 based on low volatility
+    else:
+        epsilon = 0
     
     final_score += epsilon
     

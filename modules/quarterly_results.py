@@ -93,7 +93,7 @@ async def get_quarterly_timeline(symbol: str, quarters: int = 12) -> Dict:
             'timestamp': datetime.now().isoformat()
         }
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+        import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
 
         print(f"Error fetching quarterly timeline for {symbol}: {str(e)}")
         return {
@@ -171,7 +171,7 @@ async def process_quarter_data(
                 if shares and shares > 0:
                     eps = profit / shares
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+                import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
 
                 pass
         
@@ -184,7 +184,7 @@ async def process_quarter_data(
                 if shares > 0:
                     book_value_per_share = equity / shares
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+                import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
 
                 pass
         
@@ -208,7 +208,7 @@ async def process_quarter_data(
         }
         
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+        import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
 
         print(f"Error processing quarter {quarter_date}: {str(e)}")
         return None

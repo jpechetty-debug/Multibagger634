@@ -26,7 +26,7 @@ def analyze_market_regime(symbol="^NSEI"):
         else:
             return "Sideways"
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+        import logging; logging.getLogger(__name__).warning("market failed: %s", e)
 
         return "Unknown"
 

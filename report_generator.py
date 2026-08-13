@@ -225,7 +225,7 @@ async def generate_analyst_report(symbol):
                 if equity and equity > 0:
                     roe = net_inc / equity
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
 
                 roe = 0
         
@@ -252,7 +252,7 @@ async def generate_analyst_report(symbol):
                 if total_debt is not None and equity:
                     debt_equity = total_debt / equity
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
 
                 debt_equity = 0
         
@@ -278,7 +278,7 @@ async def generate_analyst_report(symbol):
                     if not q_cf.empty and 'Operating Cash Flow' in q_cf.index:
                         cfo = q_cf.loc['Operating Cash Flow'].iloc[0]
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
 
                 cfo = 0
         

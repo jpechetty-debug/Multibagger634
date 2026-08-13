@@ -54,6 +54,6 @@ def analyze_insider_activity(stock_data):
         return score, status
         
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+        import logging; logging.getLogger(__name__).warning("insider failed: %s", e)
 
         return 0, "Unknown"

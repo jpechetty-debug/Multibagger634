@@ -76,6 +76,6 @@ def get_multibagger_probability(stock_data):
     try:
         return model_v1.predict_proba(stock_data)
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+        import logging; logging.getLogger(__name__).warning("probability failed: %s", e)
 
         return 0.0

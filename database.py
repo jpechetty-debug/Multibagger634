@@ -89,6 +89,17 @@ def _ensure_fundamentals_pit_table(conn):
         ON fundamentals_pit (as_of_date)
         """
     )
+    
+    # Ensure columns exist if table was created previously
+    _ensure_column(conn, "fundamentals_pit", "roce", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "median_pat_growth", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "ret_1m", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "ret_3m", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "ret_6m", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "vol_breakout", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "dist_from_52w_high", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "ml_rank_score", "REAL")
+    _ensure_column(conn, "fundamentals_pit", "source_updated_at", "TIMESTAMP")
 
 
 def _ensure_runtime_schema():

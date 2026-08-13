@@ -1,81 +1,81 @@
 # Phase 52: Capital Deployment Report (v2.9 Enhanced)
-Market Condition: VIX 27.16 (Multiplier: 1.25x)
+Market Condition: VIX 11.42 (Multiplier: 1.0x)
 
 ## AUM Scenario: INR 1,000,000
 | Symbol        |   Price |   Avg_Vol_20d |   Impact_Cost_% | Status   |
 |:--------------|--------:|--------------:|----------------:|:---------|
-| SILVERBEES.NS |  194.44 |      76163263 |            0    | OK       |
-| GOLDBEES.NS   |  110.1  |      63740630 |            0    | OK       |
-| GICL.NS       |   38.99 |        123067 |            0.13 | OK       |
-| ELLEN.NS      |  190.54 |        566328 |            0.03 | OK       |
-| MEIL.NS       |  220.83 |         84932 |            0.06 | OK       |
-| DISHTV.NS     |    2.11 |       6896314 |            0.07 | OK       |
-| LAXMIINDIA.NS |   81.48 |        206244 |            0.07 | OK       |
-| INDOFARM.NS   |  120.85 |        240984 |            0.05 | OK       |
-| DENTA.NS      |  228.7  |        286088 |            0.03 | OK       |
-| STALLION.NS   |  108.96 |       1446418 |            0.02 | OK       |
-| LAXMIDENTL.NS |  168.15 |        117685 |            0.06 | OK       |
-| VIKRAMSOLR.NS |  187.75 |       4416864 |            0.01 | OK       |
-| OWAIS.NS      |  106.75 |         42500 |            0.13 | OK       |
-| IGCL.NS       |   54.3  |        162324 |            0.09 | OK       |
-| HILINFRA.NS   |   45.89 |        141220 |            0.11 | OK       |
-| REGAAL.NS     |   66.46 |       6270070 |            0.01 | OK       |
-| GLOBECIVIL.NS |   40.96 |         94815 |            0.14 | OK       |
-| RAYMOND.NS    |  346    |        379329 |            0.02 | OK       |
-| VIKRAN.NS     |   57.64 |       2418566 |            0.02 | OK       |
-| PROSTARM.NS   |  127.14 |        326937 |            0.04 | OK       |
+| SILVERBEES.NS |  220.97 |      23451414 |            0    | OK       |
+| GOLDBEES.NS   |  125.48 |      21008148 |            0    | OK       |
+| GICL.NS       |   22.79 |        206011 |            0.1  | OK       |
+| ELLEN.NS      |  337    |        800722 |            0.01 | OK       |
+| MEIL.NS       |  274.45 |         33233 |            0.07 | OK       |
+| DISHTV.NS     |    2.8  |        676820 |            0.16 | OK       |
+| LAXMIINDIA.NS |  129.04 |        145229 |            0.05 | OK       |
+| INDOFARM.NS   |  146.87 |        204675 |            0.04 | OK       |
+| DENTA.NS      |  316.9  |        303580 |            0.02 | OK       |
+| STALLION.NS   |  241.35 |       3922535 |            0.01 | OK       |
+| LAXMIDENTL.NS |  206.23 |        146090 |            0.04 | OK       |
+| VIKRAMSOLR.NS |  163.46 |       2348426 |            0.01 | OK       |
+| OWAIS.NS      |   87.3  |         15036 |            0.2  | OK       |
+| IGCL.NS       |   71.87 |        179304 |            0.06 | OK       |
+| HILINFRA.NS   |   45.02 |         57735 |            0.14 | OK       |
+| REGAAL.NS     |   86.03 |        106755 |            0.07 | OK       |
+| GLOBECIVIL.NS |   44.31 |         66414 |            0.13 | OK       |
+| RAYMOND.NS    |  642    |        502442 |            0.01 | OK       |
+| VIKRAN.NS     |   65.16 |       1597600 |            0.02 | OK       |
+| PROSTARM.NS   |  135.82 |        313375 |            0.03 | OK       |
 
 Verdict: SCALABLE
 
 ## AUM Scenario: INR 10,000,000
 | Symbol        |   Price |   Avg_Vol_20d |   Impact_Cost_% | Status   |
 |:--------------|--------:|--------------:|----------------:|:---------|
-| SILVERBEES.NS |  194.44 |      76163263 |            0.01 | OK       |
-| GOLDBEES.NS   |  110.1  |      63740630 |            0.01 | OK       |
-| GICL.NS       |   38.99 |        123067 |            0.4  | OK       |
-| ELLEN.NS      |  190.54 |        566328 |            0.09 | OK       |
-| MEIL.NS       |  220.83 |         84932 |            0.2  | OK       |
-| DISHTV.NS     |    2.11 |       6896314 |            0.23 | OK       |
-| LAXMIINDIA.NS |   81.48 |        206244 |            0.22 | OK       |
-| INDOFARM.NS   |  120.85 |        240984 |            0.16 | OK       |
-| DENTA.NS      |  228.7  |        286088 |            0.11 | OK       |
-| STALLION.NS   |  108.96 |       1446418 |            0.07 | OK       |
-| LAXMIDENTL.NS |  168.15 |        117685 |            0.2  | OK       |
-| VIKRAMSOLR.NS |  187.75 |       4416864 |            0.03 | OK       |
-| OWAIS.NS      |  106.75 |         42500 |            0.41 | OK       |
-| IGCL.NS       |   54.3  |        162324 |            0.3  | OK       |
-| HILINFRA.NS   |   45.89 |        141220 |            0.35 | OK       |
-| REGAAL.NS     |   66.46 |       6270070 |            0.04 | OK       |
-| GLOBECIVIL.NS |   40.96 |         94815 |            0.45 | OK       |
-| RAYMOND.NS    |  346    |        379329 |            0.08 | OK       |
-| VIKRAN.NS     |   57.64 |       2418566 |            0.07 | OK       |
-| PROSTARM.NS   |  127.14 |        326937 |            0.14 | OK       |
+| SILVERBEES.NS |  220.97 |      23451414 |            0.01 | OK       |
+| GOLDBEES.NS   |  125.48 |      21008148 |            0.01 | OK       |
+| GICL.NS       |   22.79 |        206011 |            0.33 | OK       |
+| ELLEN.NS      |  337    |        800722 |            0.04 | OK       |
+| MEIL.NS       |  274.45 |         33233 |            0.23 | OK       |
+| DISHTV.NS     |    2.8  |        676820 |            0.51 | SLIPPAGE |
+| LAXMIINDIA.NS |  129.04 |        145229 |            0.16 | OK       |
+| INDOFARM.NS   |  146.87 |        204675 |            0.13 | OK       |
+| DENTA.NS      |  316.9  |        303580 |            0.07 | OK       |
+| STALLION.NS   |  241.35 |       3922535 |            0.02 | OK       |
+| LAXMIDENTL.NS |  206.23 |        146090 |            0.13 | OK       |
+| VIKRAMSOLR.NS |  163.46 |       2348426 |            0.04 | OK       |
+| OWAIS.NS      |   87.3  |         15036 |            0.62 | SLIPPAGE |
+| IGCL.NS       |   71.87 |        179304 |            0.2  | OK       |
+| HILINFRA.NS   |   45.02 |         57735 |            0.44 | OK       |
+| REGAAL.NS     |   86.03 |        106755 |            0.23 | OK       |
+| GLOBECIVIL.NS |   44.31 |         66414 |            0.41 | OK       |
+| RAYMOND.NS    |  642    |        502442 |            0.04 | OK       |
+| VIKRAN.NS     |   65.16 |       1597600 |            0.07 | OK       |
+| PROSTARM.NS   |  135.82 |        313375 |            0.11 | OK       |
 
 Verdict: SCALABLE
 
 ## AUM Scenario: INR 100,000,000
 | Symbol        |   Price |   Avg_Vol_20d |   Impact_Cost_% | Status      |
 |:--------------|--------:|--------------:|----------------:|:------------|
-| SILVERBEES.NS |  194.44 |      76163263 |            0.02 | OK          |
-| GOLDBEES.NS   |  110.1  |      63740630 |            0.03 | OK          |
-| GICL.NS       |   38.99 |        123067 |            1.28 | HIGH_IMPACT |
-| ELLEN.NS      |  190.54 |        566328 |            0.27 | OK          |
-| MEIL.NS       |  220.83 |         84932 |            0.65 | SLIPPAGE    |
-| DISHTV.NS     |    2.11 |       6896314 |            0.73 | SLIPPAGE    |
-| LAXMIINDIA.NS |   81.48 |        206244 |            0.68 | SLIPPAGE    |
-| INDOFARM.NS   |  120.85 |        240984 |            0.52 | SLIPPAGE    |
-| DENTA.NS      |  228.7  |        286088 |            0.35 | OK          |
-| STALLION.NS   |  108.96 |       1446418 |            0.22 | OK          |
-| LAXMIDENTL.NS |  168.15 |        117685 |            0.63 | SLIPPAGE    |
-| VIKRAMSOLR.NS |  187.75 |       4416864 |            0.1  | OK          |
-| OWAIS.NS      |  106.75 |         42500 |            1.31 | HIGH_IMPACT |
-| IGCL.NS       |   54.3  |        162324 |            0.94 | SLIPPAGE    |
-| HILINFRA.NS   |   45.89 |        141220 |            1.1  | HIGH_IMPACT |
-| REGAAL.NS     |   66.46 |       6270070 |            0.14 | OK          |
-| GLOBECIVIL.NS |   40.96 |         94815 |            1.42 | HIGH_IMPACT |
-| RAYMOND.NS    |  346    |        379329 |            0.24 | OK          |
-| VIKRAN.NS     |   57.64 |       2418566 |            0.24 | OK          |
-| PROSTARM.NS   |  127.14 |        326937 |            0.43 | OK          |
+| SILVERBEES.NS |  220.97 |      23451414 |            0.03 | OK          |
+| GOLDBEES.NS   |  125.48 |      21008148 |            0.04 | OK          |
+| GICL.NS       |   22.79 |        206011 |            1.03 | HIGH_IMPACT |
+| ELLEN.NS      |  337    |        800722 |            0.14 | OK          |
+| MEIL.NS       |  274.45 |         33233 |            0.74 | SLIPPAGE    |
+| DISHTV.NS     |    2.8  |        676820 |            1.62 | HIGH_IMPACT |
+| LAXMIINDIA.NS |  129.04 |        145229 |            0.52 | SLIPPAGE    |
+| INDOFARM.NS   |  146.87 |        204675 |            0.41 | OK          |
+| DENTA.NS      |  316.9  |        303580 |            0.23 | OK          |
+| STALLION.NS   |  241.35 |       3922535 |            0.07 | OK          |
+| LAXMIDENTL.NS |  206.23 |        146090 |            0.41 | OK          |
+| VIKRAMSOLR.NS |  163.46 |       2348426 |            0.11 | OK          |
+| OWAIS.NS      |   87.3  |         15036 |            1.95 | HIGH_IMPACT |
+| IGCL.NS       |   71.87 |        179304 |            0.62 | SLIPPAGE    |
+| HILINFRA.NS   |   45.02 |         57735 |            1.39 | HIGH_IMPACT |
+| REGAAL.NS     |   86.03 |        106755 |            0.74 | SLIPPAGE    |
+| GLOBECIVIL.NS |   44.31 |         66414 |            1.3  | HIGH_IMPACT |
+| RAYMOND.NS    |  642    |        502442 |            0.12 | OK          |
+| VIKRAN.NS     |   65.16 |       1597600 |            0.22 | OK          |
+| PROSTARM.NS   |  135.82 |        313375 |            0.34 | OK          |
 
 Verdict: CAUTION
 

@@ -1030,30 +1030,44 @@ def analyze_sector_rotation(stock_list):
 def analyze_market_regime(symbol="^NSEI"):
     """
     Determines Market Regime: Bull, Bear, Correction, Sideways.
+    Also calculates the 200DMA of VIX to return a Regime-Relative VIX limit.
+    Returns: (regime_string, vix_relative_limit)
     """
     try:
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period="2y") # Need 200 DMA
         
+        # Also fetch VIX
+        try:
+            vix_ticker = yf.Ticker("^INDIAVIX")
+            vix_hist = vix_ticker.history(period="2y")
+            vix_sma_200 = vix_hist['Close'].tail(200).mean()
+            vix_std_200 = vix_hist['Close'].tail(200).std()
+            vix_relative_limit = vix_sma_200 + (1.5 * vix_std_200)
+            if not np.isfinite(vix_relative_limit):
+                vix_relative_limit = 25.0
+        except Exception:
+            vix_relative_limit = 25.0
+        
         if len(hist) < 200:
-            return "Unknown"
+            return "Unknown", vix_relative_limit
             
         sma_50 = hist['Close'].tail(50).mean()
         sma_200 = hist['Close'].tail(200).mean()
         current_price = hist['Close'].iloc[-1]
         
         if current_price > sma_50 and sma_50 > sma_200:
-            return "Bull Market"
+            return "Bull Market", vix_relative_limit
         elif current_price < sma_50 and sma_50 < sma_200:
-            return "Bear Market"
+            return "Bear Market", vix_relative_limit
         elif current_price < sma_50 and current_price > sma_200:
-            return "Correction"
+            return "Correction", vix_relative_limit
         elif current_price > sma_50 and current_price < sma_200:
-            return "Recovery"
+            return "Recovery", vix_relative_limit
         else:
-            return "Sideways"
+            return "Sideways", vix_relative_limit
     except Exception as e:
-        return "Unknown"
+        return "Unknown", 25.0
 
 def main():
     import argparse
@@ -1136,8 +1150,10 @@ def main():
     results = []
     
     # Phase 10: Market Regime
-    market_regime = analyze_market_regime()
+    market_regime, vix_relative_limit = analyze_market_regime()
     print(f"Market Regime Detected: {market_regime}")
+    if vix_relative_limit:
+        print(f"Regime-Relative VIX Limit: {vix_relative_limit:.2f}")
     
     # 1. Fetch All Data
     min_mcap = getattr(config, 'MIN_MARKET_CAP_CR', 500)
@@ -1585,6 +1601,21 @@ def main():
         for sec, med in sorted(sector_medians.items()):
             print(f"  {sec}: ROE={med['median_roe']}%, Growth={med['median_growth']}%, PE={med['median_pe']}")
         
+        # --- NEW: Cross-Sectional Stats for Z-Score Normalization ---
+        import numpy as np
+        metrics_to_stat = [
+            "Sales_Growth_5Y%", "Avg_ROE_5Y%", "CFO_PAT_Ratio", 
+            "PE_Ratio", "PEG_Ratio", "EPS_Growth%", "Debt_Equity", "Down_From_52W_High%"
+        ]
+        cross_sectional_stats = {}
+        for metric in metrics_to_stat:
+            vals = [s.get(metric) for s in results if s.get(metric) is not None and np.isfinite(s.get(metric))]
+            if len(vals) > 5:
+                cross_sectional_stats[metric] = {
+                    "mean": float(np.mean(vals)),
+                    "std": float(np.std(vals)) or 1e-5
+                }
+        
         # 3. Calculate Final Scores
         for stock in results:
             bonus = 0
@@ -1596,7 +1627,13 @@ def main():
                 
             # Pass the selected mode as 'market_regime' (overriding the auto-detection for strategy purposes)
             # This is a temporary bridge until we separate Market Regime from Scoring Strategy in the function signature.
-            score_data = calculate_institutional_score(stock, sector_boost=bonus, market_regime=final_mode, sector_medians=sector_medians)
+            score_data = calculate_institutional_score(
+                stock, 
+                sector_boost=bonus, 
+                market_regime=final_mode, 
+                sector_medians=sector_medians,
+                cross_sectional_stats=cross_sectional_stats
+            )
             
             # Pydantic Validation
             try:
