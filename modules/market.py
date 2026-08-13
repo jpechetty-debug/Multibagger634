@@ -26,6 +26,8 @@ def analyze_market_regime(symbol="^NSEI"):
         else:
             return "Sideways"
     except Exception as e:
+        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
         return "Unknown"
 
 def analyze_sector_rotation(stock_list):

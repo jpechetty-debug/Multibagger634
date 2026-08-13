@@ -381,6 +381,8 @@ async def fetch_stock_metrics(symbol: str) -> Dict:
             "current_price": current_price,
         }
     except Exception as e:
+        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
         print(f"Peer fetch failed for {symbol}: {e}")
         return {"symbol": symbol, "error": str(e)}
 
@@ -390,6 +392,8 @@ async def get_terminal_score_from_db(symbol: str) -> Optional[int]:
     try:
         return await asyncio.to_thread(_sync_db_score_lookup, symbol)
     except Exception as e:
+        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
         return None
 
 def _sync_db_score_lookup(symbol: str):
@@ -414,6 +418,8 @@ def _sync_db_score_lookup(symbol: str):
         
         conn.close()
     except Exception as e:
+        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
         pass
     return None
 

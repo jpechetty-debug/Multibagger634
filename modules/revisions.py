@@ -58,4 +58,6 @@ def analyze_revisions(ticker):
         return score, sentiment
         
     except Exception as e:
+        import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
         return 0, "Unknown"

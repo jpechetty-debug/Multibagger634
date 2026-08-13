@@ -277,6 +277,8 @@ class RiskGovernor:
         try:
             print(f"[BLACK BOX] Rejected {symbol} -> {reason}")
         except Exception as e:
+            import logging; logging.getLogger(__name__).warning(f"Exception caught: {e}")
+
             pass
 
 def calculate_risk_params(price, atr, capital=100000, risk_per_trade=0.01):
