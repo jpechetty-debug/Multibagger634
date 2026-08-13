@@ -15,7 +15,6 @@ import config
 import database as database_module
 import main
 import modules.alpha_vantage as alpha_vantage_module
-import modules.financials as financials_module
 import modules.market_data as market_data_module
 import modules.news as news_module
 import modules.peer_analysis as peer_analysis_module
@@ -234,9 +233,6 @@ def test_peers_financials_technicals_shareholding_endpoints(monkeypatch):
     async def fake_peers(symbol: str):
         return {"symbol": symbol, "peers": [{"symbol": "TCS.NS"}]}
 
-    def fake_financials(symbol: str):
-        return {"symbol": symbol, "timeline": [{"date": "Dec '25", "revenue": 1000.0}]}
-
     async def fake_technicals(symbol: str):
         return {"symbol": symbol, "trend": "Bullish", "strength_score": 82}
 
@@ -244,18 +240,15 @@ def test_peers_financials_technicals_shareholding_endpoints(monkeypatch):
         return {"symbol": symbol, "pattern": {"promoters": 52.1, "institutions": 31.0, "public": 16.9}}
 
     monkeypatch.setattr(peer_analysis_module, "get_peer_comparison", fake_peers)
-    monkeypatch.setattr(financials_module, "get_quarterly_results", fake_financials)
     monkeypatch.setattr(technicals_module, "get_technical_analysis", fake_technicals)
     monkeypatch.setattr(shareholding_module, "get_shareholding_pattern", fake_shareholding)
 
     with TestClient(main.app) as client:
         peers_resp = client.get("/api/peers/INFY.NS")
-        fin_resp = client.get("/api/financials/INFY.NS")
         tech_resp = client.get("/api/technicals/INFY.NS")
         share_resp = client.get("/api/shareholding/INFY.NS")
 
     assert peers_resp.status_code == 200
-    assert fin_resp.status_code == 200
     assert tech_resp.status_code == 200
     assert share_resp.status_code == 200
     assert peers_resp.json()["peers"][0]["symbol"] == "TCS.NS"

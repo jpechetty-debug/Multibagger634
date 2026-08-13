@@ -262,28 +262,118 @@ const QuarterlyTimeline = ({ symbol }) => {
 
     if (loading) return <div className="text-center py-10"><div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/></div>;
     if (error) return <div className="text-red-400 text-[10px] p-4 bg-red-400/10 rounded">Error: {error}</div>;
-    if (!data || !data.timeline) return <div className="text-slate-500 text-[10px] p-4 italic">No quarterly data available.</div>;
+    if (!data || !data.quarters || data.quarters.length === 0) return <div className="text-slate-500 text-[10px] p-4 italic">No quarterly data available.</div>;
 
     return (
-        <div className="animate-fade-in">
-            <div className="flex justify-between items-center mb-4">
+        <div className="animate-fade-in space-y-4">
+            <div className="flex justify-between items-center">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Financial Pulse</div>
                 <div className="flex gap-1">
-                    <button onClick={() => setViewMode('revenue')} className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${viewMode === 'revenue' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>Revenue</button>
-                    <button onClick={() => setViewMode('profit')} className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${viewMode === 'profit' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>Profit</button>
+                    {['revenue', 'profit', 'margin', 'combined'].map(m => (
+                        <button key={m} onClick={() => setViewMode(m)} className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${viewMode === m ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>{m}</button>
+                    ))}
                 </div>
             </div>
+            
+            {/* Chart */}
             <div className="h-48 w-full bg-slate-900/40 rounded-xl p-2 border border-white/5">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={data.timeline}>
+                    <ComposedChart data={data.quarters}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 8 }} axisLine={false} tickLine={false} />
-                        <YAxis hide domain={['auto', 'auto']} />
+                        <XAxis dataKey="quarter" tick={{ fill: '#64748b', fontSize: 8 }} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="left" hide domain={['auto', 'auto']} />
+                        <YAxis yAxisId="right" orientation="right" hide domain={['auto', 'auto']} />
                         <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '10px' }} />
-                        <Bar dataKey={viewMode} fill={viewMode === 'revenue' ? '#3b82f6' : '#10b981'} radius={[4, 4, 0, 0]} barSize={20} />
-                        <Line type="monotone" dataKey={viewMode} stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                        
+                        {viewMode === 'revenue' && (
+                            <>
+                                <Bar yAxisId="left" dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                            </>
+                        )}
+                        {viewMode === 'profit' && (
+                            <>
+                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="profit" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                            </>
+                        )}
+                        {viewMode === 'margin' && (
+                            <>
+                                <Bar yAxisId="left" dataKey="margin" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="margin" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                            </>
+                        )}
+                        {viewMode === 'combined' && (
+                            <>
+                                <Bar yAxisId="left" dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} />
+                            </>
+                        )}
                     </ComposedChart>
                 </ResponsiveContainer>
+            </div>
+
+            {/* Key Insights */}
+            {data.trends && (
+                <div className="bg-slate-800/40 p-3 rounded-lg border border-slate-700/50">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Key Insights</div>
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                            <div className="text-[8px] text-slate-500 uppercase">Rev Trend</div>
+                            <div className={`text-xs font-bold ${data.trends.revenue_trend === 'ACCELERATING' ? 'text-emerald-400' : data.trends.revenue_trend === 'DECELERATING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.revenue_trend}</div>
+                        </div>
+                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                            <div className="text-[8px] text-slate-500 uppercase">Profit Trend</div>
+                            <div className={`text-xs font-bold ${data.trends.profit_trend === 'ACCELERATING' ? 'text-emerald-400' : data.trends.profit_trend === 'DECELERATING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.profit_trend}</div>
+                        </div>
+                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                            <div className="text-[8px] text-slate-500 uppercase">Margin Trend</div>
+                            <div className={`text-xs font-bold ${data.trends.margin_trend === 'EXPANDING' ? 'text-emerald-400' : data.trends.margin_trend === 'CONTRACTING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.margin_trend}</div>
+                        </div>
+                    </div>
+                    {data.alerts && data.alerts.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                            {data.alerts.map((alert, i) => (
+                                <div key={i} className="text-[10px] text-amber-400/90 flex items-start gap-1">
+                                    <span>⚠️</span> <span>{alert}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Detailed Table */}
+            <div className="overflow-x-auto border border-white/5 rounded-lg bg-slate-900/30">
+                <table className="w-full text-left text-[10px]">
+                    <thead className="bg-slate-800/80 text-slate-400">
+                        <tr>
+                            <th className="p-2 font-medium">Quarter</th>
+                            <th className="p-2 font-medium text-right">Rev (Cr)</th>
+                            <th className="p-2 font-medium text-right">QoQ%</th>
+                            <th className="p-2 font-medium text-right">YoY%</th>
+                            <th className="p-2 font-medium text-right">Profit (Cr)</th>
+                            <th className="p-2 font-medium text-right">Margin%</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {data.quarters.slice().reverse().map((q, i) => (
+                            <tr key={i} className="hover:bg-slate-800/30 transition-colors">
+                                <td className="p-2 font-medium text-slate-300">{q.quarter || q.date}</td>
+                                <td className="p-2 text-right">{q.revenue ? q.revenue.toFixed(2) : '-'}</td>
+                                <td className={`p-2 text-right ${q.revenue_growth_qoq > 0 ? 'text-emerald-400' : q.revenue_growth_qoq < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                                    {q.revenue_growth_qoq ? (q.revenue_growth_qoq > 0 ? '+' : '') + q.revenue_growth_qoq.toFixed(1) + '%' : '-'}
+                                </td>
+                                <td className={`p-2 text-right ${q.revenue_growth_yoy > 0 ? 'text-emerald-400' : q.revenue_growth_yoy < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                                    {q.revenue_growth_yoy ? (q.revenue_growth_yoy > 0 ? '+' : '') + q.revenue_growth_yoy.toFixed(1) + '%' : '-'}
+                                </td>
+                                <td className="p-2 text-right">{q.profit ? q.profit.toFixed(2) : '-'}</td>
+                                <td className="p-2 text-right text-amber-400/90">{q.margin ? (q.margin * 100).toFixed(1) + '%' : '-'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

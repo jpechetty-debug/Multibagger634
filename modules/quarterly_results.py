@@ -1,9 +1,11 @@
-﻿"""
+"""
 Quarterly Results Timeline Module
 Analyzes quarterly financial performance trends over time.
 """
 
+import logging
 import pandas as pd
+logger = logging.getLogger(__name__)
 import yfinance as yf
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -18,7 +20,7 @@ def _safe_float(value) -> Optional[float]:
         parsed = float(value)
         if not np.isfinite(parsed): return None
         return parsed
-    except: return None
+    except (TypeError, ValueError): return None
 
 async def get_quarterly_timeline(symbol: str, quarters: int = 12) -> Dict:
     """
@@ -93,9 +95,7 @@ async def get_quarterly_timeline(symbol: str, quarters: int = 12) -> Dict:
             'timestamp': datetime.now().isoformat()
         }
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
-
-        print(f"Error fetching quarterly timeline for {symbol}: {str(e)}")
+        logger.warning("quarterly_results failed: %s", e)
         return {
             'symbol': symbol,
             'quarters': [],
@@ -171,7 +171,7 @@ async def process_quarter_data(
                 if shares and shares > 0:
                     eps = profit / shares
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
+                logger.warning("quarterly_results failed: %s", e)
 
                 pass
         
@@ -184,7 +184,7 @@ async def process_quarter_data(
                 if shares > 0:
                     book_value_per_share = equity / shares
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
+                logger.warning("quarterly_results failed: %s", e)
 
                 pass
         
@@ -208,9 +208,7 @@ async def process_quarter_data(
         }
         
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning("quarterly_results failed: %s", e)
-
-        print(f"Error processing quarter {quarter_date}: {str(e)}")
+        logger.warning("quarterly_results failed: %s", e)
         return None
 
 def format_quarter_label(date) -> str:

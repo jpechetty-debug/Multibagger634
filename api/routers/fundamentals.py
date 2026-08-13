@@ -22,6 +22,28 @@ from database import get_connection
 
 router = APIRouter()
 
+async def _with_cache(cache_dict, symbol, fetch_fn):
+    import time
+    start_time = time.time()
+    
+    from api.dependencies import _cache_is_fresh, _cache_set, CACHE_AUDIT_TTL
+    if _cache_is_fresh(cache_dict.get(symbol, {}), CACHE_AUDIT_TTL):
+        print(f"CACHE HIT for {symbol}")
+        return cache_dict[symbol]["payload"]
+        
+    print(f"API Request for {symbol}")
+    result = await fetch_fn()
+    
+    cleaned = _json_safe_clean(result)
+    
+    if symbol not in cache_dict:
+        cache_dict[symbol] = {}
+    _cache_set(cache_dict[symbol], cleaned)
+    
+    print(f"JSON cleaned and cached for {symbol} (took {time.time() - start_time:.2f}s)")
+    return cleaned
+
+
 @router.get("/api/valuation/{symbol}")
 async def get_valuation(symbol: str, as_of_date: str | None = None):
     try:
@@ -223,13 +245,6 @@ async def get_valuation(symbol: str, as_of_date: str | None = None):
         print(f"Valuation Error: {e}")
         return {"error": str(e)}
 
-@router.get("/api/financials/{symbol}")
-def get_financials(symbol: str):
-    try:
-        from modules.financials import get_quarterly_results
-        return _json_safe_clean(get_quarterly_results(symbol))
-    except Exception as e:
-        return {"error": str(e)}
 
 @router.get("/api/governance/{symbol}")
 async def get_governance_data(symbol: str):
@@ -380,66 +395,24 @@ async def get_shareholding(symbol: str):
 
 @router.get("/api/quarterly-results/{symbol}")
 async def quarterly_results_endpoint(symbol: str, quarters: int = 12):
-    import time
-    start_time = time.time()
     try:
-        # Check Cache
-        if _cache_is_fresh(CACHE_QUARTERLY.get(symbol, {}), CACHE_AUDIT_TTL):
-            print(f"CACHE HIT: Quarterly Results for {symbol}")
-            return CACHE_QUARTERLY[symbol]["payload"]
-
-        print(f"API Request: Quarterly Timeline for {symbol}")
         from modules.quarterly_results import get_quarterly_timeline
-        result = await get_quarterly_timeline(symbol, quarters)
-        
-        print(f"Got results for {symbol}, cleaning JSON... (took {time.time() - start_time:.2f}s)")
-        cleaned = _json_safe_clean(result)
-        
-        # Set Cache
-        if symbol not in CACHE_QUARTERLY: CACHE_QUARTERLY[symbol] = {}
-        _cache_set(CACHE_QUARTERLY[symbol], cleaned)
-        
-        print(f"JSON cleaned and cached for {symbol} (took {time.time() - start_time:.2f}s)")
-        return cleaned
+        return await _with_cache(CACHE_QUARTERLY, symbol, lambda: get_quarterly_timeline(symbol, quarters))
     except Exception as e:
         from fastapi import HTTPException
         print(f"Error in quarterly_results_endpoint: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch quarterly results: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch quarterly results: {str(e)}")
 
 @router.get("/api/price-fundamentals/{symbol}")
 async def price_fundamentals_endpoint(symbol: str, years: int = 5):
-    import time
-    start_time = time.time()
     try:
-        # Check Cache
-        if _cache_is_fresh(CACHE_FUNDAMENTALS.get(symbol, {}), CACHE_AUDIT_TTL):
-            print(f"CACHE HIT: Fundamentals for {symbol}")
-            return CACHE_FUNDAMENTALS[symbol]["payload"]
-
-        print(f"API Request: Price vs Fundamentals for {symbol}")
         from modules.price_fundamentals import get_price_vs_fundamentals
         years = min(max(years, 3), 10)
-        result = await get_price_vs_fundamentals(symbol, years)
-        
-        print(f"Got results for {symbol}, cleaning JSON... (took {time.time() - start_time:.2f}s)")
-        cleaned = _json_safe_clean(result)
-        
-        # Set Cache
-        if symbol not in CACHE_FUNDAMENTALS: CACHE_FUNDAMENTALS[symbol] = {}
-        _cache_set(CACHE_FUNDAMENTALS[symbol], cleaned)
-        
-        print(f"JSON cleaned and cached for {symbol} (took {time.time() - start_time:.2f}s)")
-        return cleaned
+        return await _with_cache(CACHE_FUNDAMENTALS, symbol, lambda: get_price_vs_fundamentals(symbol, years))
     except Exception as e:
         from fastapi import HTTPException
         print(f"Error in price_fundamentals_endpoint: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch price vs fundamentals: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch price vs fundamentals: {str(e)}")
 
 @router.get("/api/estimates/{symbol}")
 async def get_estimates(symbol: str):
