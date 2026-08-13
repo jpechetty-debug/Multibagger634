@@ -75,5 +75,5 @@ def get_multibagger_probability(stock_data):
     """Wrapper to predict using the probability model."""
     try:
         return model_v1.predict_proba(stock_data)
-    except:
+    except Exception as e:
         return 0.0

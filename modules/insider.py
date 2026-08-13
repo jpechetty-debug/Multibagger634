@@ -53,5 +53,5 @@ def analyze_insider_activity(stock_data):
              
         return score, status
         
-    except:
+    except Exception as e:
         return 0, "Unknown"

@@ -57,5 +57,5 @@ def analyze_revisions(ticker):
         
         return score, sentiment
         
-    except:
+    except Exception as e:
         return 0, "Unknown"

@@ -13,6 +13,7 @@ PyYAML
 # v3.0+ ML & AI
 xgboost
 shap
+
 vectorbt
 
 # v4.0 Infrastructure
@@ -20,3 +21,18 @@ sqlalchemy>=2.0
 psycopg[binary]
 redis
 celery[redis]
+
+# Missing dependencies added from audit
+hmmlearn
+statsmodels
+matplotlib
+lightgbm
+joblib
+loguru
+jinja2
+playwright
+rich
+tenacity
+pandas_market_calendars
+requests
+python-telegram-bot

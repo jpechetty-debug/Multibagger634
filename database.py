@@ -793,7 +793,7 @@ def save_multibaggers(df):
                     if isinstance(penalties, str):
                         try:
                             penalties = ast.literal_eval(penalties)
-                        except:
+                        except Exception as e:
                             penalties = []
                             
                     if isinstance(penalties, list):

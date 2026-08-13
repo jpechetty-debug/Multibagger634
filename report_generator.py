@@ -224,7 +224,7 @@ async def generate_analyst_report(symbol):
                 
                 if equity and equity > 0:
                     roe = net_inc / equity
-            except:
+            except Exception as e:
                 roe = 0
         
         roe = (roe * 100) if roe else 0
@@ -249,7 +249,7 @@ async def generate_analyst_report(symbol):
                 
                 if total_debt is not None and equity:
                     debt_equity = total_debt / equity
-            except:
+            except Exception as e:
                 debt_equity = 0
         
         if debt_equity and debt_equity > 10:
@@ -273,7 +273,7 @@ async def generate_analyst_report(symbol):
                     q_cf = await asyncio.to_thread(lambda: ticker.quarterly_cashflow)
                     if not q_cf.empty and 'Operating Cash Flow' in q_cf.index:
                         cfo = q_cf.loc['Operating Cash Flow'].iloc[0]
-            except:
+            except Exception as e:
                 cfo = 0
         
         pat = _to_float(info.get("netIncomeToCommon"), 0.0)

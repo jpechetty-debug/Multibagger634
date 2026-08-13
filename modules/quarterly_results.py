@@ -168,7 +168,7 @@ async def process_quarter_data(
                 shares = _safe_float(balance_sheet.loc['Ordinary Shares Number', quarter_date]) if 'Ordinary Shares Number' in balance_sheet.index else None
                 if shares and shares > 0:
                     eps = profit / shares
-            except:
+            except Exception as e:
                 pass
         
         # Get Book Value per Share
@@ -179,7 +179,7 @@ async def process_quarter_data(
                 shares = _safe_float(balance_sheet.loc['Ordinary Shares Number', quarter_date]) if 'Ordinary Shares Number' in balance_sheet.index else 1
                 if shares > 0:
                     book_value_per_share = equity / shares
-            except:
+            except Exception as e:
                 pass
         
         # Format quarter label

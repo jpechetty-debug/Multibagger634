@@ -755,7 +755,7 @@ def clean_val(val):
     val = val.replace('%', '').replace(',', '').strip()
     try:
         return float(val)
-    except:
+    except Exception as e:
         return val
 
 def parse_elite_data(data):

@@ -20,7 +20,7 @@ from datetime import datetime
 # Fix Windows console encoding
 try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-except:
+except Exception as e:
     pass
 
 
@@ -63,7 +63,7 @@ def detect_test_framework(project_path: Path) -> dict:
                 result["cmd"] = ["npx", "jest"]
                 result["coverage_cmd"] = ["npx", "jest", "--coverage"]
                 
-        except:
+        except Exception as e:
             pass
     
     # Python project

@@ -389,7 +389,7 @@ async def get_terminal_score_from_db(symbol: str) -> Optional[int]:
     """Fetch Terminal Score from stocks.db"""
     try:
         return await asyncio.to_thread(_sync_db_score_lookup, symbol)
-    except:
+    except Exception as e:
         return None
 
 def _sync_db_score_lookup(symbol: str):
@@ -413,7 +413,7 @@ def _sync_db_score_lookup(symbol: str):
         if row: return int(row[0])
         
         conn.close()
-    except:
+    except Exception as e:
         pass
     return None
 

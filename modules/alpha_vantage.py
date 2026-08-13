@@ -5,10 +5,9 @@ from datetime import date
 
 import requests
 
-from config
+from config import ALPHA_VANTAGE_API_KEY as API_KEY
 import logging
 logger = logging.getLogger(__name__)
- import ALPHA_VANTAGE_API_KEY as API_KEY
 
 # Persistent rate limiting tracker across instances.
 _last_call_time = 0.0

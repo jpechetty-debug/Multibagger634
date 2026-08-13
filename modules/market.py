@@ -25,7 +25,7 @@ def analyze_market_regime(symbol="^NSEI"):
             return "Recovery"
         else:
             return "Sideways"
-    except:
+    except Exception as e:
         return "Unknown"
 
 def analyze_sector_rotation(stock_list):

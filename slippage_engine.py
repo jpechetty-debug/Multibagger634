@@ -44,7 +44,7 @@ def run_slippage_analysis():
                 info = t.info
                 mc = info.get('marketCap', 0) / 10000000 # Convert to Crores
                 caps.append(mc)
-            except:
+            except Exception as e:
                 caps.append(0)
         portfolio['market_cap_cr'] = caps
 

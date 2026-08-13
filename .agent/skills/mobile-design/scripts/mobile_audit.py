@@ -82,7 +82,7 @@ class MobileAuditor:
         try:
             with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()
-        except:
+        except Exception as e:
             return
 
         self.files_checked += 1
@@ -410,7 +410,7 @@ class MobileAuditor:
                 val = weight_map.get(w.lower(), w)
                 try:
                     numeric_weights.append(int(val))
-                except:
+                except Exception as e:
                     pass
 
             # Check if overusing bold (mobile should be regular-dominant)
@@ -447,7 +447,7 @@ class MobileAuditor:
                     saturation = (max_val - min_val) / max_val
                     if saturation > 0.8:  # Highly saturated
                         saturated_count += 1
-            except:
+            except Exception as e:
                 pass
 
         if saturated_count > 10:

@@ -28,6 +28,7 @@ from modules.sector_mapping import get_refined_sector
 
 from modules.scoring import normalize_metric, calculate_sector_medians, calculate_institutional_score
 from modules.technicals import calculate_rsi, calculate_macd, calculate_bollinger_bands, calculate_atr, calculate_momentum_features
+from modules.risk import calculate_risk_params, calculate_trade_setup
 from modules.models import StockDataPayload
 from modules.ml_ranker import LightGBMRanker
 
@@ -521,7 +522,7 @@ def get_benchmark_return():
             print(f"Benchmark (Nifty) 6M Return: {BENCHMARK_6M_RETURN:.2f}%")
         else:
             BENCHMARK_6M_RETURN = 10.0 # Default fallback
-    except:
+    except Exception as e:
         BENCHMARK_6M_RETURN = 10.0
     return BENCHMARK_6M_RETURN
 
@@ -618,7 +619,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                     rs_rating = 1.0 if stock_6m_ret > 0 else 0.0
             else:
                 rs_rating = 0
-        except:
+        except Exception as e:
             rs_rating = 0
         
         dma_200 = hist['Close'].tail(200).mean() if len(hist) >= 200 else hist['Close'].mean()
@@ -733,7 +734,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                     if roes: avg_roe_5y = round(float(np.median(roes)) * 100, 2)
                 else:
                     avg_roe_5y = round(roe * 100, 2)
-            except: 
+            except Exception as e:
                 revenue_cagr_5y = round(sales_growth * 100, 2)
                 avg_roe_5y = round(roe * 100, 2)
         
@@ -751,7 +752,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                 cfo_pat_ratio = round(cfo / pat, 2)
             else:
                 cfo_pat_ratio = 0
-        except:
+        except Exception as e:
             cfo_pat_ratio = 0
 
         # --- F-Score Metrics (Full 9-Point Piotroski) ---
@@ -847,7 +848,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                 # Value Gap %: (Intrinsic - Price) / Price
                 if current_price > 0:
                     value_gap = round(((graham_num - current_price) / current_price) * 100, 2)
-            except:
+            except Exception as e:
                 graham_num = 0
                 
         # --- Phase 7: Institutional Analyst Estimates (V7.0) ---
@@ -1026,78 +1027,6 @@ def analyze_sector_rotation(stock_list):
         
     return top_3
 
-def calculate_macd(prices, slow=26, fast=12, signal=9):
-    """
-    Calculates MACDLine, SignalLine, and Histogram.
-    Returns (macd_line, signal_line, histogram)
-    """
-    exp1 = prices.ewm(span=fast, adjust=False).mean()
-    exp2 = prices.ewm(span=slow, adjust=False).mean()
-    macd = exp1 - exp2
-    signal_line = macd.ewm(span=signal, adjust=False).mean()
-    hist = macd - signal_line
-    return macd, signal_line, hist
-
-def calculate_bollinger_bands(prices, window=20, num_std=2):
-    """
-    Calculates Upper, Middle, Lower bands.
-    """
-    rolling_mean = prices.rolling(window=window).mean()
-    rolling_std = prices.rolling(window=window).std()
-    upper = rolling_mean + (rolling_std * num_std)
-    lower = rolling_mean - (rolling_std * num_std)
-    return upper, rolling_mean, lower
-
-def calculate_atr(high, low, close, period=14):
-    """
-    Calculates Average True Range (ATR).
-    """
-    tr1 = high - low
-    tr2 = (high - close.shift()).abs()
-    tr3 = (low - close.shift()).abs()
-    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr = tr.ewm(span=period, adjust=False).mean()
-    return atr
-
-def calculate_risk_params(price, atr, capital=100000, risk_per_trade=0.01):
-    """
-    Calculates Stop Loss and Position Size.
-    Risk = 2 * ATR
-    """
-    stop_loss = price - (2 * atr)
-    risk_per_share = price - stop_loss
-    
-    if risk_per_share <= 0:
-        return stop_loss, 0
-        
-    risk_amount = capital * risk_per_trade
-    qty = int(risk_amount / risk_per_share)
-    
-    return round(stop_loss, 2), qty
-
-def calculate_trade_setup(stock):
-    """
-    Calculates standard Buy Below, Stop Loss, and Target prices.
-    Phase 10: Standardized Trade Setup logic.
-    """
-    if not stock or "Price" not in stock:
-        return stock
-        
-    cmp = stock["Price"]
-    if cmp and cmp > 0:
-        stock["Buy_Below"] = round(cmp * 1.02, 1)
-        
-        # Use ATR-based stop loss if available, otherwise default 10%
-        atr_sl = stock.get("Stop_Loss_ATR")
-        if atr_sl and atr_sl > 0:
-            stock["Stop_Loss"] = round(atr_sl, 1)
-        else:
-            stock["Stop_Loss"] = round(cmp * 0.90, 1)
-            
-        stock["Target_1"] = round(cmp * 1.25, 1)
-        
-    return stock
-
 def analyze_market_regime(symbol="^NSEI"):
     """
     Determines Market Regime: Bull, Bear, Correction, Sideways.
@@ -1123,7 +1052,7 @@ def analyze_market_regime(symbol="^NSEI"):
             return "Recovery"
         else:
             return "Sideways"
-    except:
+    except Exception as e:
         return "Unknown"
 
 def main():
