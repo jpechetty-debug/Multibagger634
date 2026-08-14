@@ -1,14 +1,23 @@
 
+import sys
 import sqlite3
 import pandas as pd
 import yfinance as yf
 import numpy as np
 
+from database import get_connection
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 def run_recovery_analysis():
     print("🩹 Initiating Drawdown Recovery Analysis (Phase 53)...")
     
     try:
-        conn = sqlite3.connect('stocks.db')
+        conn = get_connection()
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
     except Exception as e:
@@ -78,7 +87,7 @@ def run_recovery_analysis():
         print("\n" + "="*50)
         print("📉 DRAWDOWN & RECOVERY REPORT (2 Years)")
         print("="*50)
-        print(f"Portfolio: Top 20 Momentum Stocks")
+        print("Portfolio: Top 20 Momentum Stocks")
         print(f"Max Drawdown (MDD):     {max_drawdown:.2f}%")
         print(f"Max Time to Recover:    {max_days_underwater:.0f} Trading Days (~{int(max_days_underwater*1.4)} Cal Days)")
         print(f"Annualized Volatility:  {volatility:.2f}%")

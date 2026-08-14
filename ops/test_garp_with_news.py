@@ -85,7 +85,7 @@ def test_garp_news_integration():
 if __name__ == "__main__":
     try:
         test_garp_news_integration()
-    except Exception as e:
+    except Exception:
         import traceback
         with open("ops/error.log", "w") as f:
             f.write(traceback.format_exc())

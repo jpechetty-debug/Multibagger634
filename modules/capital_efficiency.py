@@ -50,5 +50,5 @@ def analyze_capital_efficiency(stock_data):
             
         return roe, status, score
         
-    except Exception as e:
+    except Exception:
         return 0, "Error", 0

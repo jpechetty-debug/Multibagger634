@@ -7,7 +7,6 @@ Consolidates diagnostics, health checks, and database maintenance.
 import sys
 import io
 import argparse
-import csv
 from datetime import datetime
 import sqlite3
 import os
@@ -226,7 +225,6 @@ async def cmd_audit(args):
     """Perform universe audit and Export FAIL tickers."""
     print_header(f"Universe Audit: {args.universe}")
     try:
-        from modules.data_manager import data_manager
         conn = get_db_connection("stocks.db")
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
@@ -302,7 +300,7 @@ async def cmd_scan(args):
     elif args.universe.upper() == "SECTORS":
         universe_args = ["--universe", "SECTORS"]
 
-    print(f"🚀 Starting scan via subprocess...")
+    print("🚀 Starting scan via subprocess...")
     import subprocess
     cmd = [sys.executable, "screener.py"] + universe_args
     try:
@@ -330,7 +328,6 @@ async def cmd_telegram_test(args):
         return
 
     try:
-        import asyncio
         from telegram import Bot
         bot = Bot(token=token)
         print(f"🚀 Sending test alert to Chat ID: {chat_id}...")

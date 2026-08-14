@@ -1,12 +1,21 @@
 
+import sys
 import sqlite3
 import pandas as pd
+
+from database import get_connection
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 def run_thesis_check():
     print("🚦 Initiating Advanced Thesis Break Engine (Phase 54)...")
     
     try:
-        conn = sqlite3.connect('stocks.db')
+        conn = get_connection()
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
     except Exception as e:

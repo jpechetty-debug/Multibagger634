@@ -10,7 +10,6 @@ Generates weekly 'ALLOCATION_PROPOSAL' events.
 """
 
 import pandas as pd
-import sqlite3
 import os
 import sys
 

@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from typing import Any, Awaitable, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 
 DEFAULT_BACKOFF_SECONDS: Sequence[float] = (2.0, 4.0, 8.0)

@@ -1,7 +1,17 @@
 import asyncio
+import json
 import os
+import sqlite3
+import time
+from typing import Any, Callable
 from fastapi import WebSocket
+import numpy as np
+import pandas as pd
 from pydantic import BaseModel, Field
+
+from database import get_connection
+from modules.risk import RiskGovernor
+from modules.tracker import PortfolioTracker
 
 class ConnectionManager:
     def __init__(self):
@@ -38,9 +48,6 @@ MOVERS_CACHE_TTL_SECONDS = int(os.getenv("MOVERS_CACHE_TTL_SECONDS", "120"))
 blocking_io_semaphore = asyncio.Semaphore(BLOCKING_IO_CONCURRENCY)
 ticker_io_semaphore = asyncio.Semaphore(10)  
 
-from modules.tracker import PortfolioTracker
-from modules.risk import RiskGovernor
-
 portfolio_tracker = PortfolioTracker()
 risk_governor = RiskGovernor()
 
@@ -53,10 +60,6 @@ CACHE_QUARTERLY = {}
 CACHE_FUNDAMENTALS = {}
 CACHE_PEERS = {}
 CACHE_AUDIT_TTL = 3600  
-
-import time
-import numpy as np
-from typing import Callable, Any
 
 def _json_safe_clean(obj):
     if isinstance(obj, list):
@@ -89,13 +92,48 @@ async def _run_ticker_blocking(fn: Callable[..., Any], *args, **kwargs):
         async with blocking_io_semaphore:
             return await asyncio.to_thread(fn, *args, **kwargs)
 
-class OrderRequest:
-    pass # Wait, OrderRequest is a Pydantic model. I should define it here if needed or let routers import it from somewhere.
-
 def _is_sqlite_lock_error(exc: Exception) -> bool:
     msg = str(exc).lower()
     return "database is locked" in msg or "database table is locked" in msg
 
+async def _run_sqlite_write_with_retry(
+    write_fn: Callable[[], Any], operation_name: str
+):
+    for attempt in range(SQLITE_WRITE_RETRIES):
+        try:
+            return await _run_blocking(write_fn)
+        except sqlite3.OperationalError as exc:
+            if _is_sqlite_lock_error(exc) and attempt < SQLITE_WRITE_RETRIES - 1:
+                wait = SQLITE_RETRY_BASE_SECONDS * (2 ** attempt)
+                print(f"SQLite lock during {operation_name}; retrying in {wait:.2f}s.")
+                await asyncio.sleep(wait)
+                continue
+            raise
+
+def _run_sqlite_write_with_retry_sync(
+    write_fn: Callable[[], Any], operation_name: str
+):
+    for attempt in range(SQLITE_WRITE_RETRIES):
+        try:
+            return write_fn()
+        except sqlite3.OperationalError as exc:
+            if _is_sqlite_lock_error(exc) and attempt < SQLITE_WRITE_RETRIES - 1:
+                wait = SQLITE_RETRY_BASE_SECONDS * (2 ** attempt)
+                print(f"SQLite lock during {operation_name}; retrying in {wait:.2f}s.")
+                time.sleep(wait)
+                continue
+            raise
+
+def _read_records(query: str, params: tuple | None = None):
+    conn = get_connection()
+    try:
+        if params is not None:
+            df = pd.read_sql(query, conn, params=params)
+        else:
+            df = pd.read_sql(query, conn)
+        return json.loads(df.to_json(orient="records", double_precision=2))
+    finally:
+        conn.close()
 
 class OrderRequest(BaseModel):
     symbol: str = Field(min_length=1)

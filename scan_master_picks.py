@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 
 import screener
 import pandas as pd
-import sqlite3
 from master_picks import MASTER_PICKS
 
 def scan_master_picks():
@@ -48,7 +47,7 @@ def scan_master_picks():
                 
                 import json
                 data["SHAP_Breakdown"] = json.dumps(ml_res.get("shap_values", {}))
-            except Exception as e:
+            except Exception:
                 data["ML_Predicted_Return"] = None
                 data["SHAP_Breakdown"] = "{}"
             

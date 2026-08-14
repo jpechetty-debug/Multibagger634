@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 
 def audit_stock_data(stock_data):
     """

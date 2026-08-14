@@ -1,8 +1,7 @@
+import hashlib
 import numpy as np
 import config
 from research.conviction_engine import calculate_conviction_score
-from modules.promoter_intel import calculate_promoter_score
-from modules.estimates import get_estimate_data
 
 def normalize_metric(value, min_val, max_val, invert=False):
     """
@@ -675,16 +674,19 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     final_score = min(base_score, score_ceiling)
     
     # --- PHASE 4: DETERMINISTIC TIE-BREAKER (Institutional Requirement) ---
-    # Tie-breaker using volatility (ATR/Price) rather than arbitrary symbol hash
-    # Lower volatility gives a slightly higher micro-score
+    symbol = str(data.get("Symbol", "")).strip().upper()
+    sym_hash = int(hashlib.md5(symbol.encode("utf-8")).hexdigest(), 16) % 1000
+    sym_epsilon = (sym_hash + 1) / 1000000.0  # Range 0.000001 to 0.001000
+    
     atr = data.get("ATR", 0) or 0
     price_val = data.get("Price", 1) or 1
     if price_val > 0:
         atr_pct = atr / price_val
-        epsilon = max(0, 0.00999 - min(atr_pct, 0.00999)) # Range 0.00000 to 0.00999 based on low volatility
+        atr_epsilon = max(0, 0.00899 - min(atr_pct, 0.00899))
     else:
-        epsilon = 0
+        atr_epsilon = 0
     
+    epsilon = atr_epsilon + sym_epsilon
     final_score += epsilon
     
     # Phase 1: Track Disqualifiers in Audit payload

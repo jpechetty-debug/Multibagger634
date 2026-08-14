@@ -1,5 +1,4 @@
 
-import csv
 import os
 
 def update_ticker_list():
@@ -64,7 +63,7 @@ def update_ticker_list():
             break
 
     if last_bracket_idx != -1:
-        addition = [f"\n    # --- NIFTY 500 EXPANSION ---\n"]
+        addition = ["\n    # --- NIFTY 500 EXPANSION ---\n"]
         # Group in lines of 5 for readability
         for i in range(0, len(new_to_add), 5):
             chunk = new_to_add[i:i+5]

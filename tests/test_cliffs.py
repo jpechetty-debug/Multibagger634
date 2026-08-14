@@ -1,15 +1,11 @@
 import sys
-from unittest.mock import MagicMock
+from pathlib import Path
 
-# Mock out modules that call external APIs
-sys.modules["modules.promoter_intel"] = MagicMock()
-sys.modules["modules.promoter_intel"].calculate_promoter_score.return_value = {"is_disqualified": False, "score_adjustment": 0}
-sys.modules["modules.estimates"] = MagicMock()
-sys.modules["modules.estimates"].get_estimate_data.return_value = {"momentum": {"is_disqualified": False}}
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-sys.path.append('d:/Tradeidesa/Multibagger')
 from modules.scoring import calculate_institutional_score
-import numpy as np
 
 def test_cliffs():
     print("Verifying Institutional Checklist Spline...")

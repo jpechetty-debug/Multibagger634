@@ -1,24 +1,12 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
-from typing import Any, List, Optional, Dict
-from pydantic import BaseModel, Field
-import asyncio
-import sqlite3
-import pandas as pd
-import json
-import os
-import math
-from datetime import datetime, timedelta
+from datetime import datetime
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 
 from api.dependencies import (
-    manager, blocking_io_semaphore, ticker_io_semaphore, portfolio_tracker, risk_governor,
-    regime_cache, movers_cache, regime_cache_lock, movers_cache_lock,
-    CACHE_QUARTERLY, CACHE_FUNDAMENTALS, CACHE_PEERS, CACHE_AUDIT_TTL,
-    _run_blocking, _run_ticker_blocking, _cache_is_fresh, _cache_set, _cache_invalidate,
-    OrderRequest
+    manager, _run_blocking
 )
-import config
-from modules.market_data import MarketDataProvider
 from database import get_connection
+from modules.retry_utils import run_with_exponential_backoff
 
 router = APIRouter()
 

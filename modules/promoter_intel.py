@@ -5,10 +5,7 @@ Uses NSE bulk deal data + yfinance + historical PIT snapshots.
 """
 
 import sqlite3
-import pandas as pd
 import requests
-import json
-import time
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 

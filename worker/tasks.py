@@ -5,7 +5,6 @@ Patched: all tasks decorated with celery_task_timer for Prometheus metrics.
 """
 import os
 import sys
-import time
 import traceback
 from datetime import datetime
 
@@ -161,7 +160,7 @@ def retrain_xgboost():
 @celery_task_timer("generate_thesis")
 def generate_thesis(stock_data: dict):
     try:
-        from modules.llm_engine import generate_thesis as _gen, generate_rule_based_thesis
+        from modules.llm_engine import generate_thesis as _gen
         # Detect whether the response is the rule-based fallback
         thesis = _gen(stock_data)
         if "Rule-Based Engine" in thesis:

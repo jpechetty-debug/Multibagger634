@@ -3,10 +3,9 @@ Sovereign AI Trading Engine - Core Services Logic
 Decomposes the god-file screener.py into manageable services.
 """
 
-from typing import Dict, List, Optional, Any
-from abc import ABC, abstractmethod
+from typing import List, Optional
+from abc import ABC
 from modules.models import StockDataPayload, ScoringResult
-import pandas as pd
 import asyncio
 
 class BaseService(ABC):
@@ -205,7 +204,6 @@ class ReporterService(BaseService):
     
     def generate_investor_report(self, portfolio_data: list, output_path: str):
         """Generate a summary report of the top picks."""
-        from modules.html_report import generate_audit_report
         # Reuse existing report logic but tailored for investors
         # For now, we'll just trigger the audit report logic as a proxy
         self.logger.info(f"Generating investor report to {output_path}")

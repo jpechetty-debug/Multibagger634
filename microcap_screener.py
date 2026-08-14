@@ -1,8 +1,6 @@
 import yfinance as yf
 import pandas as pd
-import numpy as np
 from ticker_list import TICKERS
-import time
 
 def get_microcap_data(ticker_symbol):
     """
@@ -60,7 +58,7 @@ def get_microcap_data(ticker_symbol):
             "Pct_From_High": round(pct_from_high * 100, 2)
         }
 
-    except Exception as e:
+    except Exception:
         # print(f"Error {ticker_symbol}: {e}")
         return None
 

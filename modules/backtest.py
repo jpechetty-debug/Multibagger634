@@ -16,9 +16,9 @@ def run_performance_analysis(tickers, weights=None, benchmark_symbol="^NSEI", pe
         end_date: "YYYY-MM-DD" (Optional - overrides period)
     """
     if weights:
-        print(f"\nrunning Phase 17/31: Weighted Portfolio Backtest...")
+        print("\nrunning Phase 17/31: Weighted Portfolio Backtest...")
     else:
-        print(f"\nrunning Phase 16/31: Equal-Weight Backtest...")
+        print("\nrunning Phase 16/31: Equal-Weight Backtest...")
     
     if not tickers:
         print("No tickers to backtest.")
@@ -128,7 +128,7 @@ def run_performance_analysis(tickers, weights=None, benchmark_symbol="^NSEI", pe
         
         # Output Report
         print("\n" + "="*40)
-        print(f"📊 PHASE 16/33/37/38: BACKTEST REPORT")
+        print("📊 PHASE 16/33/37/38: BACKTEST REPORT")
         print("="*40)
         print(f"Strategy: {len(valid_tickers)} Stocks")
         print(f"Benchmark: {benchmark_symbol}")
@@ -151,7 +151,7 @@ def run_performance_analysis(tickers, weights=None, benchmark_symbol="^NSEI", pe
         if post_tax_cagr > cagr_benchmark:
              print(f"🏆 REAL ALPHA : +{post_tax_cagr - cagr_benchmark:.1f}% (Post-Tax)")
         else:
-             print(f"💸 TAX TRAP   :Strategy loses edge after Tax/Slippage")
+             print("💸 TAX TRAP   :Strategy loses edge after Tax/Slippage")
 
         print("="*40 + "\n")
         

@@ -1,5 +1,4 @@
 
-import csv
 import os
 import re
 
@@ -62,7 +61,7 @@ def expand_mq50():
             break
 
     if last_bracket_idx != -1:
-        addition = [f"\n    # --- NIFTY MOMENTUM QUALITY 50 EXPANSION ---\n"]
+        addition = ["\n    # --- NIFTY MOMENTUM QUALITY 50 EXPANSION ---\n"]
         # Group in lines of 5
         for i in range(0, len(new_to_add), 5):
             chunk = new_to_add[i:i+5]

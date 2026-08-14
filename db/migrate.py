@@ -11,9 +11,7 @@ Usage:
 import sqlite3
 import os
 import pandas as pd
-from datetime import datetime
 from db.engine import engine, init_tables, IS_SQLITE
-from db.models import Base
 
 
 SQLITE_SOURCE = os.getenv("SQLITE_SOURCE", "stocks.db")
@@ -91,7 +89,7 @@ def run_migration():
     print(f"\n{'='*50}")
     print(f"✅ Migration Complete: {total_rows:,} total rows transferred.")
     print(f"   Source: {SQLITE_SOURCE}")
-    print(f"   Target: PostgreSQL/TimescaleDB")
+    print("   Target: PostgreSQL/TimescaleDB")
     print(f"{'='*50}")
 
 

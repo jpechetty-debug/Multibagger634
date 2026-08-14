@@ -1,6 +1,5 @@
 
 import yfinance as yf
-import pandas as pd
 
 candidates = ["ITDCEM.NS", "HBLPOWER.NS", "REC.NS", "TATAMOTORS.NS"]
 

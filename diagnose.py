@@ -32,7 +32,6 @@ def check_system():
 
     print("\n--- Checking Imports ---")
     try:
-        import main
         print("Import main.py Successful.")
     except Exception as e:
         print(f"Import Error: {e}")

@@ -1,9 +1,18 @@
 import json
+import sys
 import sqlite3
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+from database import get_connection
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 
 def _fetch_recent_volume_and_price(symbol: str) -> tuple:
@@ -27,7 +36,7 @@ def run_liquidity_check():
     print("Initiating Capital Deployment Simulator (Phase 52)...")
 
     try:
-        conn = sqlite3.connect("stocks.db")
+        conn = get_connection()
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
     except Exception as e:

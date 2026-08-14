@@ -77,49 +77,48 @@ class PortfolioOptimizer:
             # --- CORRELATION PENALTY (v2.4) ---
             if history_df is not None and not history_df.empty:
                 print("[INFO] Applying Correlation Penalty...")
-                # ... existing correlation penalty logic ...
-            # Calculate Correlation Matrix
-            corr_matrix = history_df.corr()
+                # Calculate Correlation Matrix
+                corr_matrix = history_df.corr()
+                
+                # Map Symbol to Score (if available) for tie-breaking
+                # We assume 'Score' is in stocks list.
+                scores = {row['Symbol']: row.get('Score', 0) for _, row in df.iterrows()}
+                
+                penalty_map = {symbol: 1.0 for symbol in df['Symbol']}
+                
+                # Iterate unique pairs
+                symbols = [s for s in df['Symbol'] if s in corr_matrix.columns]
+                for i in range(len(symbols)):
+                    for j in range(i + 1, len(symbols)):
+                        s1 = symbols[i]
+                        s2 = symbols[j]
+                        correlation = corr_matrix.loc[s1, s2]
+                        
+                        if correlation > 0.7:
+                            score1 = scores.get(s1, 0)
+                            score2 = scores.get(s2, 0)
+                            victim = s2 if score1 >= score2 else s1
+                            
+                            # Apply Continuous Penalty (v2.5)
+                            # Formula: Factor = (Correlation - 0.7) / 0.3
+                            # Example: 1.0 -> 1.0 (100% Penalty)
+                            # Example: 0.85 -> 0.5 (50% Penalty)
+                            # Example: 0.70 -> 0.0 (0% Penalty)
+                            
+                            penalty_factor = (correlation - 0.7) / 0.3
+                            penalty_factor = min(max(penalty_factor, 0.0), 1.0) # Clip 0-1
+                            
+                            # Apply penalty
+                            # New Weight = Old Weight * (1 - Penalty Factor)
+                            penalty_map[victim] *= (1.0 - penalty_factor)
+                            
+                            print(f"  > High Corr ({correlation:.2f}) {s1} vs {s2}. Penalty Factor: {penalty_factor:.2f} on {victim}.")
+                            
+                # Apply Penalty to Inv_Vol
+                df['Penalty'] = df['Symbol'].map(penalty_map).fillna(1.0)
+                df['Inv_Vol'] = df['Inv_Vol'] * df['Penalty']
             
-            # Map Symbol to Score (if available) for tie-breaking
-            # We assume 'Score' is in stocks list.
-            scores = {row['Symbol']: row.get('Score', 0) for _, row in df.iterrows()}
-            
-            penalty_map = {symbol: 1.0 for symbol in df['Symbol']}
-            
-            # Iterate unique pairs
-            symbols = [s for s in df['Symbol'] if s in corr_matrix.columns]
-            for i in range(len(symbols)):
-                for j in range(i + 1, len(symbols)):
-                    s1 = symbols[i]
-                    s2 = symbols[j]
-                    correlation = corr_matrix.loc[s1, s2]
-                    
-                    if correlation > 0.7:
-                        score1 = scores.get(s1, 0)
-                        score2 = scores.get(s2, 0)
-                        victim = s2 if score1 >= score2 else s1
-                        
-                        # Apply Continuous Penalty (v2.5)
-                        # Formula: Factor = (Correlation - 0.7) / 0.3
-                        # Example: 1.0 -> 1.0 (100% Penalty)
-                        # Example: 0.85 -> 0.5 (50% Penalty)
-                        # Example: 0.70 -> 0.0 (0% Penalty)
-                        
-                        penalty_factor = (correlation - 0.7) / 0.3
-                        penalty_factor = min(max(penalty_factor, 0.0), 1.0) # Clip 0-1
-                        
-                        # Apply penalty
-                        # New Weight = Old Weight * (1 - Penalty Factor)
-                        penalty_map[victim] *= (1.0 - penalty_factor)
-                        
-                        print(f"  > High Corr ({correlation:.2f}) {s1} vs {s2}. Penalty Factor: {penalty_factor:.2f} on {victim}.")
-                        
-            # Apply Penalty to Inv_Vol
-            df['Penalty'] = df['Symbol'].map(penalty_map).fillna(1.0)
-            df['Inv_Vol'] = df['Inv_Vol'] * df['Penalty']
-            
-        total_inv_vol = df['Inv_Vol'].sum()
+            total_inv_vol = df['Inv_Vol'].sum()
         df['Raw_Weight'] = df['Inv_Vol'] / total_inv_vol
         
         # 3. Apply Constraints (Strict Clipping with Cash Drag)

@@ -10,10 +10,10 @@ def generate_institutional_report(portfolio, backtest_results, regime):
     
     with open(filename, "w", encoding="utf-8") as f:
         # 1. Header
-        f.write(f"# 🏛️ INSTITUTIONAL RESEARCH REPORT\n")
+        f.write("# 🏛️ INSTITUTIONAL RESEARCH REPORT\n")
         f.write(f"**Date**: {date_str}\n")
         f.write(f"**Market Regime**: {regime}\n")
-        f.write(f"**Strategy Mode**: Adaptive Multi-Factor\n")
+        f.write("**Strategy Mode**: Adaptive Multi-Factor\n")
         f.write("---\n\n")
         
         # 2. Executive Summary
@@ -34,8 +34,8 @@ def generate_institutional_report(portfolio, backtest_results, regime):
         
         # 3. Portfolio Allocation
         f.write("## 2. MODEL PORTFOLIO ALLOCATION\n")
-        f.write(f"| Ticker | Sector | Weight | Score | Status |\n")
-        f.write(f"|---|---|---|---|---|\n")
+        f.write("| Ticker | Sector | Weight | Score | Status |\n")
+        f.write("|---|---|---|---|---|\n")
         
         for s in portfolio:
             sym = s.get("Symbol", "")

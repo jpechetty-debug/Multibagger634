@@ -12,7 +12,6 @@ Usage:
 
 import os
 import sys
-import time
 import json
 import signal
 import argparse
@@ -55,7 +54,7 @@ def start_server(port=3000):
             if is_running(pid):
                 print(f"⚠️  Preview already running (PID: {pid})")
                 return
-        except Exception as e:
+        except Exception:
             pass # Invalid PID file
 
     root = get_project_root()
@@ -117,12 +116,12 @@ def status_server():
                 running = True
                 # Heuristic for URL, strictly we should save it
                 url = "http://localhost:3000" 
-        except Exception as e:
+        except Exception:
             pass
             
     print("\n=== Preview Status ===")
     if running:
-        print(f"✅ Status: Running")
+        print("✅ Status: Running")
         print(f"🔢 PID: {pid}")
         print(f"🌐 URL: {url} (Likely)")
         print(f"📝 Logs: {LOG_FILE}")

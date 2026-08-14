@@ -15,34 +15,12 @@ from __future__ import annotations
 import sys
 import math
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
 # ── Project root on path ────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-
-# ── Stub every module that touches external APIs ────────────────────────────
-_prom_stub = MagicMock()
-_prom_stub.calculate_promoter_score.return_value = {
-    "is_disqualified": False, "score_adjustment": 0
-}
-sys.modules.setdefault("modules.promoter_intel", _prom_stub)
-
-_est_stub = MagicMock()
-_est_stub.get_estimate_data.return_value = {
-    "momentum": {"is_disqualified": False, "score_cap": None, "score_adjustment": 0}
-}
-sys.modules.setdefault("modules.estimates", _est_stub)
-
-# Conviction engine stub
-_conv_stub = MagicMock()
-_conv_stub.calculate_conviction_score.return_value = {
-    "conviction_score": 50, "conviction_boost": 0,
-    "institutional_interest": False, "investors": [],
-}
-sys.modules.setdefault("research.conviction_engine", _conv_stub)
 
 # Now import the module under test
 from modules.scoring import calculate_institutional_score, normalize_metric

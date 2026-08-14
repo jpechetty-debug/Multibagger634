@@ -116,7 +116,8 @@ async def lifespan(app: FastAPI):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 if __name__ == "__main__":
-    import pathlib, re, sys
+    import pathlib
+    import re
 
     src = pathlib.Path("main.py").read_text(encoding="utf-8")
     original = src

@@ -1,4 +1,3 @@
-import pandas as pd
 
 def analyze_alpha_attribution(portfolio, universe):
     """

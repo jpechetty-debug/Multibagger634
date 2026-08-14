@@ -72,7 +72,7 @@ def cleanup():
     with open(ticker_file, "w") as f:
         f.writelines(new_lines)
         
-    print(f"Updated ticker_list.py (removed references).")
+    print("Updated ticker_list.py (removed references).")
 
 if __name__ == "__main__":
     cleanup()

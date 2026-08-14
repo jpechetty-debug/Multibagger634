@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 
 import screener
 import pandas as pd
-import sqlite3
 from user_picks_v5 import USER_PICKS_V5
 
 def scan_user_picks_v5():

@@ -1,7 +1,4 @@
-import sys
-import os
 import pandas as pd
-import sqlite3
 import screener
 
 def scan_specific_symbols():

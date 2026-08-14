@@ -1,16 +1,14 @@
 import asyncio
 import os
 import sys
-from typing import List, Optional, Dict, Any
 from mcp.server.fastmcp import FastMCP
-import pandas as pd
 
 # Add the current directory to sys.path to import local modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from modules.regime_hmm import RegimeHMM
 from modules.mirofish_client import MiroFishClient
-from screener import get_stock_data, TICKERS
+from screener import get_stock_data
 from ticker_list import SECTORS
 
 # Initialize FastMCP server

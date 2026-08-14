@@ -207,7 +207,6 @@ class RiskGovernor:
         else:
             return "BLACK", 0.0 # Total Kill Switch
 
-        return max_size
 
     def check_governance_red_flags(self, stock_data):
         """

@@ -6,7 +6,6 @@ Uses the MiroFish Multi-Agent Engine to predict the trajectory of high-convictio
 import argparse
 import sys
 import logging
-import json
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -41,7 +40,7 @@ def run_swarm_scan(tickers: list):
         console.print(f"\\n[blue]Generating project context for {ticker}...[/blue]")
         context = get_mock_context(ticker)
         
-        console.print(f"[blue]Submitting to MiroFish Simulation Engine...[/blue]")
+        console.print("[blue]Submitting to MiroFish Simulation Engine...[/blue]")
         # This will either connect to MiroFish on :5001 or fallback
         report = client.simulate_ticker(ticker, context)
         

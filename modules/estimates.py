@@ -6,7 +6,6 @@ Uses Alpha Vantage earnings calendar + self-computed CAGR estimates.
 
 import json
 import os
-from datetime import datetime
 from typing import Dict, List, Optional
 
 

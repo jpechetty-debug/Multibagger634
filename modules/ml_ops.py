@@ -1,12 +1,8 @@
-import os
 import sqlite3
-import joblib
 import pandas as pd
-import logging
-from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any
 
-from modules.hybrid_scoring import train_hybrid_model, predict_and_explain, FEATURES
+from modules.hybrid_scoring import train_hybrid_model
 from modules.structured_logger import logger
 
 ML_METADATA_TABLE = "ml_metadata"
@@ -106,7 +102,6 @@ async def batch_update_multibaggers_ml():
     """Update the multibaggers table with fresh predictions from the latest model."""
     logger.info("Batch updating multibaggers with new ML predictions...")
     try:
-        from modules.services import DataStoreService
         from modules.hybrid_scoring import predict_and_explain
         import json
         

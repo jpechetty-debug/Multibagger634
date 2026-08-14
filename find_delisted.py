@@ -5,11 +5,6 @@ import pandas as pd
 import time
 
 
-import yfinance as yf
-from ticker_list import TICKERS
-import pandas as pd
-import time
-import os
 
 def check_symbol(symbol):
     """Deep check for a single symbol."""

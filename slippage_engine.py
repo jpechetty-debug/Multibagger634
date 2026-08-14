@@ -1,15 +1,23 @@
 
+import sys
 import sqlite3
 import pandas as pd
 import yfinance as yf
-import numpy as np
+
+from database import get_connection
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 def run_slippage_analysis():
     print("📉 Initiating Real-World Slippage Modeling (Phase 50)...")
     
     # 1. Load Data
     try:
-        conn = sqlite3.connect('stocks.db')
+        conn = get_connection()
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
     except Exception as e:
@@ -44,7 +52,7 @@ def run_slippage_analysis():
                 info = t.info
                 mc = info.get('marketCap', 0) / 10000000 # Convert to Crores
                 caps.append(mc)
-            except Exception as e:
+            except Exception:
                 caps.append(0)
         portfolio['market_cap_cr'] = caps
 
@@ -105,7 +113,7 @@ def run_slippage_analysis():
     print("-" * 50)
     print("📉 SLIPPAGE IMPACT REPORT")
     print("-" * 50)
-    print(f"Strategy: Momentum (Top 20)")
+    print("Strategy: Momentum (Top 20)")
     print(f"Arg. Market Cap:    ₹{portfolio['market_cap_cr'].mean():,.0f} Cr")
     print(f"Gross Return (1Y):  {avg_gross:.2f}%")
     print(f"Net Return (1Y):    {avg_net:.2f}%")

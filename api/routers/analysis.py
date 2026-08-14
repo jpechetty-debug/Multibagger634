@@ -1,24 +1,15 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
-from typing import Any, List, Optional, Dict
-from pydantic import BaseModel, Field
-import asyncio
-import sqlite3
-import pandas as pd
+from fastapi import APIRouter
 import json
 import os
-import math
-from datetime import datetime, timedelta
+from datetime import datetime
+
+import csv
 
 from api.dependencies import (
-    manager, blocking_io_semaphore, ticker_io_semaphore, portfolio_tracker, risk_governor,
-    regime_cache, movers_cache, regime_cache_lock, movers_cache_lock,
-    CACHE_QUARTERLY, CACHE_FUNDAMENTALS, CACHE_PEERS, CACHE_AUDIT_TTL,
-    _run_blocking, _run_ticker_blocking, _cache_is_fresh, _cache_set, _cache_invalidate,
-    OrderRequest
+    _run_blocking, _read_records, _json_safe_clean
 )
-import config
-from modules.market_data import MarketDataProvider
 from database import get_connection
+from modules.symbol_utils import normalize_symbol
 
 router = APIRouter()
 
@@ -109,8 +100,11 @@ async def get_stock_report_html(symbol: str):
 
 @router.get("/api/thesis_break")
 async def get_thesis_break():
-    """Fetch all thesis break statuses (upgraded: live engine)."""
+    """Fetch all thesis break statuses (upgraded: live engine with fallback)."""
     try:
+        if os.path.exists("thesis_break.json"):
+            with open("thesis_break.json", "r") as f:
+                return json.load(f)
         from modules.thesis_monitor import check_all_thesis_breaks
         results = await _run_blocking(check_all_thesis_breaks)
         return {
@@ -120,10 +114,6 @@ async def get_thesis_break():
             "signals": results,
         }
     except Exception as e:
-        # Fallback to legacy JSON
-        if os.path.exists("thesis_break.json"):
-            with open("thesis_break.json", "r") as f:
-                return json.load(f)
         return {"error": str(e)}
 
 @router.get("/api/thesis_status/{symbol}")

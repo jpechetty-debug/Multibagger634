@@ -1,16 +1,18 @@
 import asyncio
+from datetime import datetime
 import hashlib
+import logging
 import os
 import re
+import socket
 import tempfile
-from datetime import datetime
 
 import yfinance as yf
-import sys
-import socket
-socket.setdefaulttimeout(20.0)
 
 from modules.retry_utils import run_with_exponential_backoff
+
+socket.setdefaulttimeout(20.0)
+logger = logging.getLogger(__name__)
 
 
 CACHE_DIR = "reports_cache"
@@ -210,23 +212,22 @@ async def generate_analyst_report(symbol):
                 labels = ['Stockholders Equity', 'Total Equity Gross Minority Interest', 'Common Stock Equity']
                 
                 # Try annual first
-                for l in labels:
-                    if l in bs.index:
-                        equity = bs.loc[l].iloc[0]
+                for lbl in labels:
+                    if lbl in bs.index:
+                        equity = bs.loc[lbl].iloc[0]
                         break
                 
                 if not equity:
                     # Try quarterly
-                    for l in labels:
-                        if l in q_bs.index:
-                            equity = q_bs.loc[l].iloc[0]
+                    for lbl in labels:
+                        if lbl in q_bs.index:
+                            equity = q_bs.loc[lbl].iloc[0]
                             break
                 
                 if equity and equity > 0:
                     roe = net_inc / equity
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
-
+                logger.warning("report_generator failed: %s", e)
                 roe = 0
         
         roe = (roe * 100) if roe else 0
@@ -239,9 +240,9 @@ async def generate_analyst_report(symbol):
             try:
                 bs = await asyncio.to_thread(lambda: ticker.balance_sheet)
                 total_debt = None
-                for l in ['Total Debt', 'Net Debt']:
-                    if l in bs.index:
-                        total_debt = bs.loc[l].iloc[0]
+                for lbl in ['Total Debt', 'Net Debt']:
+                    if lbl in bs.index:
+                        total_debt = bs.loc[lbl].iloc[0]
                         break
                 
                 # We need equity again
@@ -252,8 +253,7 @@ async def generate_analyst_report(symbol):
                 if total_debt is not None and equity:
                     debt_equity = total_debt / equity
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
-
+                logger.warning("report_generator failed: %s", e)
                 debt_equity = 0
         
         if debt_equity and debt_equity > 10:
@@ -278,8 +278,7 @@ async def generate_analyst_report(symbol):
                     if not q_cf.empty and 'Operating Cash Flow' in q_cf.index:
                         cfo = q_cf.loc['Operating Cash Flow'].iloc[0]
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning("report_generator failed: %s", e)
-
+                logger.warning("report_generator failed: %s", e)
                 cfo = 0
         
         pat = _to_float(info.get("netIncomeToCommon"), 0.0)

@@ -1,27 +1,18 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Request
-from typing import Any, List, Optional, Dict
-from pydantic import BaseModel, Field
-import asyncio
-import sqlite3
+from fastapi import APIRouter
 import pandas as pd
-import json
-import os
-import math
 import time
 import numpy as np
-from datetime import datetime, timedelta
+import yfinance as yf
+from datetime import datetime
 
 from api.dependencies import (
-    manager, blocking_io_semaphore, ticker_io_semaphore, portfolio_tracker, risk_governor,
-    regime_cache, movers_cache, regime_cache_lock, movers_cache_lock,
-    CACHE_QUARTERLY, CACHE_FUNDAMENTALS, CACHE_PEERS, CACHE_AUDIT_TTL,
-    _run_blocking, _run_ticker_blocking, _cache_is_fresh, _cache_set, _cache_invalidate,
-    _json_safe_clean,
-    OrderRequest
+    CACHE_PEERS, CACHE_QUARTERLY, CACHE_FUNDAMENTALS, CACHE_AUDIT_TTL,
+    _run_blocking, _cache_is_fresh, _cache_set, _json_safe_clean, _run_sqlite_write_with_retry
 )
-import config
-from modules.market_data import MarketDataProvider
 from database import get_connection
+from modules.symbol_utils import normalize_symbol
+from modules.retry_utils import run_with_exponential_backoff
+from modules.revisions import analyze_revisions
 
 router = APIRouter()
 
@@ -318,60 +309,8 @@ async def get_governance_data(symbol: str):
 async def get_stock_peers(symbol: str):
     """Fetch Sector Peers for Comparison"""
     try:
-        if not symbol.endswith(".NS") and not symbol.endswith(".BO"):
-            symbol += ".NS"
-
-        def _get_peers():
-            conn = get_connection()
-            try:
-                # 1. Get Target Metrics
-                target_query = "SELECT symbol, sector, price as current_price, score as terminal_score, pe_ratio as pe, roe, debt_equity, rs_rating as price_change_3m FROM multibaggers WHERE symbol = ?"
-                target = pd.read_sql(target_query, conn, params=(symbol,))
-                if target.empty:
-                    return {"error": "Stock not found"}
-                
-                start_sector = target.iloc[0]['sector']
-
-                # 2. Get Peers using Subquery for Sector (More robust)
-                query = """
-                    SELECT symbol, symbol as name, price as current_price, score as terminal_score, pe_ratio as pe, roe, debt_equity, rs_rating as price_change_3m
-                    FROM multibaggers 
-                    WHERE sector = (SELECT sector FROM multibaggers WHERE symbol = ?) 
-                    AND symbol != ?
-                    ORDER BY score DESC
-                    LIMIT 5
-                """
-                peers_df = pd.read_sql(query, conn, params=(symbol, symbol))
-                peers = peers_df.to_dict(orient="records")
-                
-                # 3. Sector Averages
-                avg_query = """
-                    SELECT 
-                        AVG(pe_ratio) as pe, 
-                        AVG(roe) as roe, 
-                        AVG(score) as terminal_score 
-                    FROM multibaggers 
-                    WHERE sector = (SELECT sector FROM multibaggers WHERE symbol = ?)
-                """
-                # Use execute directly for scalar values to avoid overhead? No, pandas is fine.
-                avg_df = pd.read_sql(avg_query, conn, params=(symbol,))
-                if not avg_df.empty:
-                    avgs = avg_df.iloc[0].to_dict()
-                else:
-                    avgs = {}
-                
-                return {
-                    "sector": start_sector,
-                    "peers": peers,
-                    "sector_avg": avgs,
-                    "stock_metrics": target.iloc[0].to_dict(),
-                    "rankings": {"score_rank_desc": "Top 10"}
-                }
-            finally:
-                conn.close()
-
-        return await _run_blocking(_get_peers)
-
+        from modules.peer_analysis import get_peer_comparison
+        return await _with_cache(CACHE_PEERS, symbol, lambda: get_peer_comparison(symbol))
     except Exception as e:
         return {"error": str(e)}
 
@@ -398,7 +337,8 @@ async def get_shareholding(symbol: str):
 async def quarterly_results_endpoint(symbol: str, quarters: int = 12):
     try:
         from modules.quarterly_results import get_quarterly_timeline
-        return await _with_cache(CACHE_QUARTERLY, symbol, lambda: get_quarterly_timeline(symbol, quarters))
+        cache_key = f"{symbol}:{quarters}"
+        return await _with_cache(CACHE_QUARTERLY, cache_key, lambda: get_quarterly_timeline(symbol, quarters))
     except Exception as e:
         from fastapi import HTTPException
         print(f"Error in quarterly_results_endpoint: {e}")
@@ -409,7 +349,8 @@ async def price_fundamentals_endpoint(symbol: str, years: int = 5):
     try:
         from modules.price_fundamentals import get_price_vs_fundamentals
         years = min(max(years, 3), 10)
-        return await _with_cache(CACHE_FUNDAMENTALS, symbol, lambda: get_price_vs_fundamentals(symbol, years))
+        cache_key = f"{symbol}:{years}"
+        return await _with_cache(CACHE_FUNDAMENTALS, cache_key, lambda: get_price_vs_fundamentals(symbol, years))
     except Exception as e:
         from fastapi import HTTPException
         print(f"Error in price_fundamentals_endpoint: {e}")

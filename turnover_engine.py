@@ -1,14 +1,22 @@
 
+import sys
 import sqlite3
 import pandas as pd
-import numpy as np
+
+from database import get_connection
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 def run_turnover_analysis():
     print("🔄 Initiating Turnover & Tax Efficiency Analysis (Phase 51)...")
     
     # 1. Load Data
     try:
-        conn = sqlite3.connect('stocks.db')
+        conn = get_connection()
         df = pd.read_sql("SELECT * FROM multibaggers", conn)
         conn.close()
     except Exception as e:
@@ -103,7 +111,7 @@ def run_turnover_analysis():
     tax_drag_pct = net_return_slippage - post_tax_return
     
     print("-" * 50)
-    print(f"Strategy: Momentum (High RS)")
+    print("Strategy: Momentum (High RS)")
     print("-" * 50)
     print(f"Net Return (Pre-Tax):  {net_return_slippage:.2f}%")
     print(f"Tax Rate Applied:      {tax_rate*100}% ({tax_type})")

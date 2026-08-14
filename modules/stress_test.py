@@ -1,4 +1,3 @@
-import pandas as pd
 
 
 def _build_weights(portfolio_stocks, weights=None):

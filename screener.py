@@ -2,15 +2,11 @@
 import yfinance as yf  # Kept for Nifty benchmark index only (^NSEI)
 import pandas as pd
 import numpy as np
-import time
 import json
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Dict
 from ticker_list import TICKERS
 from modules.logger import ScanLogger
-import database
-from research.conviction_engine import calculate_conviction_score
 from modules.fundamentals import (
     calculate_piotroski_f_score, 
     check_earnings_inflection,
@@ -21,12 +17,11 @@ from modules.fundamentals import (
 )
 from modules.estimates import get_estimate_data
 from modules.data_manager import DataManager, data_manager
-from backtest.engine import VectorBTEngine
 import asyncio
 from datetime import datetime, date, timedelta
 from modules.sector_mapping import get_refined_sector
 
-from modules.scoring import normalize_metric, calculate_sector_medians, calculate_institutional_score
+from modules.scoring import calculate_sector_medians, calculate_institutional_score
 from modules.technicals import calculate_rsi, calculate_macd, calculate_bollinger_bands, calculate_atr, calculate_momentum_features
 from modules.risk import calculate_risk_params, calculate_trade_setup
 from modules.models import StockDataPayload
@@ -174,13 +169,13 @@ def calculate_data_quality(data, *, zero_valuation_cap=20.0):
     """Weighted data quality score (0-100): completeness + source confidence + freshness."""
     flags = data.get("_dq_flags")
     if not isinstance(flags, dict):
-        flags = {field: _is_present_metric(data.get(field)) for field in _DATA_QUALITY_FIELDS}
+        flags = {dq_field: _is_present_metric(data.get(dq_field)) for dq_field in _DATA_QUALITY_FIELDS}
 
     total_weight = float(sum(_DATA_QUALITY_WEIGHTS.values()) or 100.0)
     completeness_points = 0.0
-    for field in _DATA_QUALITY_FIELDS:
-        if bool(flags.get(field, False)):
-            completeness_points += float(_DATA_QUALITY_WEIGHTS.get(field, 0))
+    for dq_field in _DATA_QUALITY_FIELDS:
+        if bool(flags.get(dq_field, False)):
+            completeness_points += float(_DATA_QUALITY_WEIGHTS.get(dq_field, 0))
     completeness_score = (completeness_points / total_weight) * 100.0
 
     source = str(data.get("Data_Source", "unknown")).strip().lower()
@@ -472,7 +467,7 @@ def validate_score_distribution(results):
     pct_80_plus = ((dist['90-100'] + dist['80-89']) / total) * 100
     
     print(f"\n{'='*50}")
-    print(f" SCORE DISTRIBUTION (V3.1 Validation)")
+    print(" SCORE DISTRIBUTION (V3.1 Validation)")
     print(f"{'='*50}")
     for bracket, count in dist.items():
         pct = (count / total) * 100
@@ -486,7 +481,7 @@ def validate_score_distribution(results):
         print(f"    WARNING: {pct_80_plus:.1f}% scored 80+ (expect <30%)  review scoring weights")
     
     if pct_90 <= 10 and pct_80_plus <= 30:
-        print(f"   Distribution looks healthy")
+        print("   Distribution looks healthy")
     print(f"{'='*50}")
     
     return dist
@@ -522,7 +517,7 @@ def get_benchmark_return():
             print(f"Benchmark (Nifty) 6M Return: {BENCHMARK_6M_RETURN:.2f}%")
         else:
             BENCHMARK_6M_RETURN = 10.0 # Default fallback
-    except Exception as e:
+    except Exception:
         BENCHMARK_6M_RETURN = 10.0
     return BENCHMARK_6M_RETURN
 
@@ -619,7 +614,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                     rs_rating = 1.0 if stock_6m_ret > 0 else 0.0
             else:
                 rs_rating = 0
-        except Exception as e:
+        except Exception:
             rs_rating = 0
         
         dma_200 = hist['Close'].tail(200).mean() if len(hist) >= 200 else hist['Close'].mean()
@@ -727,14 +722,14 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                     equity_series = bs.loc['Stockholders Equity'].iloc[::-1]
                     roes = []
                     common_dates = net_income_series.index.intersection(equity_series.index)
-                    for date in common_dates:
-                        ni = net_income_series[date]
-                        eq = equity_series[date]
+                    for dt in common_dates:
+                        ni = net_income_series[dt]
+                        eq = equity_series[dt]
                         if eq > 0: roes.append(ni / eq)
                     if roes: avg_roe_5y = round(float(np.median(roes)) * 100, 2)
                 else:
                     avg_roe_5y = round(roe * 100, 2)
-            except Exception as e:
+            except Exception:
                 revenue_cagr_5y = round(sales_growth * 100, 2)
                 avg_roe_5y = round(roe * 100, 2)
         
@@ -752,7 +747,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                 cfo_pat_ratio = round(cfo / pat, 2)
             else:
                 cfo_pat_ratio = 0
-        except Exception as e:
+        except Exception:
             cfo_pat_ratio = 0
 
         # --- F-Score Metrics (Full 9-Point Piotroski) ---
@@ -848,7 +843,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
                 # Value Gap %: (Intrinsic - Price) / Price
                 if current_price > 0:
                     value_gap = round(((graham_num - current_price) / current_price) * 100, 2)
-            except Exception as e:
+            except Exception:
                 graham_num = 0
                 
         # --- Phase 7: Institutional Analyst Estimates (V7.0) ---
@@ -1066,7 +1061,7 @@ def analyze_market_regime(symbol="^NSEI"):
             return "Recovery", vix_relative_limit
         else:
             return "Sideways", vix_relative_limit
-    except Exception as e:
+    except Exception:
         return "Unknown", 25.0
 
 def main():
@@ -1079,7 +1074,7 @@ def main():
     args = parser.parse_args()
 
     import config
-    from ticker_list import TICKERS, MULTIBAGGER_HUNT, SECTORS
+    from ticker_list import MULTIBAGGER_HUNT, SECTORS
 
     targeted_symbols = {s.strip().upper() for s in args.symbols.split(",")} if args.symbols else set()
     is_full_scan = len(targeted_symbols) == 0
@@ -1098,7 +1093,7 @@ def main():
         print(f" Targeted Scan: {scan_tickers}")
     elif args.smoke:
         scan_tickers = scan_tickers[:10]
-        print(f" Smoke Test: Scanning first 10 symbols")
+        print(" Smoke Test: Scanning first 10 symbols")
 
     # Auto-prune/flag integration: skip currently inactive symbols for full scans.
     auto_flag_enable = bool(getattr(config, "AUTO_FLAG_INVALID_SYMBOLS", True))
@@ -1131,14 +1126,13 @@ def main():
     print(f"Strategy Mode: {final_mode.upper()}")
     
     # --- Model Version Check (Phase 2.2) ---
-    from modules.logger import ScanLogger
     
     logger = ScanLogger()
     current_hash = logger._generate_version_hash()
     
     if current_hash != config.MODEL_VERSION_HASH:
         print("\n" + "!"*60)
-        print(f"  MODEL INTEGRITY WARNING: Version Mismatch!")
+        print("  MODEL INTEGRITY WARNING: Version Mismatch!")
         print(f"Expected: {config.MODEL_VERSION} ({config.MODEL_VERSION_HASH})")
         print(f"Actual:   {current_hash}")
         print("Code logic has changed since version freeze.")
@@ -1597,7 +1591,7 @@ def main():
         
         # V6.0: Calculate sector medians for relative scoring
         sector_medians = calculate_sector_medians(results)
-        print(f"\n Sector Medians (V6.0):")
+        print("\n Sector Medians (V6.0):")
         for sec, med in sorted(sector_medians.items()):
             print(f"  {sec}: ROE={med['median_roe']}%, Growth={med['median_growth']}%, PE={med['median_pe']}")
         
@@ -1676,7 +1670,7 @@ def main():
                 # Convert SHAP dict to JSON string for easier SQLite storage
                 import json
                 stock["SHAP_Breakdown"] = json.dumps(ml_res.get("shap_values", {}))
-            except Exception as e:
+            except Exception:
                 # Silent fail if ML model not ready
                 stock["ML_Predicted_Return"] = None
                 stock["SHAP_Breakdown"] = "{}"
@@ -1734,7 +1728,6 @@ def main():
             database.save_multibaggers(df)
         except Exception as e:
             import logging
-            from modules.exceptions import DatabaseConcurrencyError
             logging.error(f"Database error while saving multibaggers: {e}", exc_info=True)
 
         # Phase 40 & 41: Institutional Analysis Pipeline

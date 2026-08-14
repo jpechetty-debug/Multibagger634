@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 
 import screener
 import pandas as pd
-import sqlite3
 from commodity_list import COMMODITIES
 
 def scan_commodities():

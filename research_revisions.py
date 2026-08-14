@@ -1,5 +1,4 @@
 import yfinance as yf
-import pandas as pd
 
 def check_revisions(symbol):
     print(f"Checking Revisions for {symbol}...")

@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 def analyze_factor_redundancy(stock_list):
     """

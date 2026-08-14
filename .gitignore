@@ -64,7 +64,20 @@ docker-compose.override.yml
 # ── Logs & reports ────────────────────────────────────────────────────────────
 logs/
 *.log
-reports/*.html
+reports/
+reports_cache/
+*_report.md
+sell_report.md
+tax_report.md
+vif_report.md
+drawdown_report.md
+slippage_report.md
+alpha_report.md
+backtest_report.md
+liquidity_report.md
+liquidity.json
+thesis_break.json
+test_output*.txt
 ops/daily_reports/
 ops/institutional_daily_scorecard.json
 
@@ -72,7 +85,6 @@ ops/institutional_daily_scorecard.json
 check_fail*.txt
 disq_fail*.txt
 final_fail*.txt
-reports_cache/
 ops/ticker_list_*.txt
 ops/audit_result.txt
 

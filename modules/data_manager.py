@@ -12,7 +12,7 @@ import sqlite3
 import pickle
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime, date
+from datetime import datetime
 
 import pandas_market_calendars as mcal
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
@@ -417,6 +417,18 @@ class DataManager:
         pause_seconds = min(2.5, 0.2 * streak)
         await asyncio.sleep(pause_seconds)
 
+    def fetch_fundamentals(self, symbol: str) -> Dict:
+        """Synchronous wrapper around async_fetch_fundamentals."""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                return pool.submit(asyncio.run, self.async_fetch_fundamentals(symbol)).result()
+        return asyncio.run(self.async_fetch_fundamentals(symbol))
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -538,6 +550,36 @@ class DataManager:
 
     async def close(self):
         self.executor.shutdown(wait=True)
+
+
+class DataSourceManager:
+    """Manager that handles multiple DataSource fallbacks (yfinance, nse, groww)."""
+    def __init__(self):
+        from modules.sources.yfinance_source import YFinanceSource
+        from modules.sources.nse_source import NSESource
+        from modules.sources.groww_source import GrowwSource
+        self.sources = [YFinanceSource(), NSESource(), GrowwSource()]
+
+    def fetch_fundamentals(self, symbol: str) -> Dict:
+        for source in self.sources:
+            try:
+                res = source.fetch_fundamentals(symbol)
+                if res and "info" in res:
+                    return res
+            except Exception:
+                continue
+        return {"error": "All sources failed"}
+
+    def fetch_history(self, symbol: str, period: str = "1y") -> pd.DataFrame:
+        for source in self.sources:
+            try:
+                df = source.fetch_history(symbol, period=period)
+                if df is not None and not df.empty:
+                    return df
+            except Exception:
+                continue
+        return pd.DataFrame()
+
 
 # For backward compatibility singleton
 data_manager = DataManager()

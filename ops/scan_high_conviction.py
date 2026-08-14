@@ -2,7 +2,6 @@
 import sys
 import os
 import pandas as pd
-import asyncio
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -56,7 +55,7 @@ def scan_watchlist():
                 results.append(data)
                 print(f"✅ Score: {score}")
             else:
-                print(f"❌ No Data")
+                print("❌ No Data")
                 
         except Exception as e:
              print(f"❌ Error: {e}")

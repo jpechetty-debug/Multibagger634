@@ -1,4 +1,3 @@
-import pandas as pd
 
 def analyze_revisions(ticker):
     """

@@ -2,7 +2,6 @@
 import pandas as pd
 from screener import get_stock_data, calculate_institutional_score
 import database
-import sys
 
 # Suppress warnings
 import warnings

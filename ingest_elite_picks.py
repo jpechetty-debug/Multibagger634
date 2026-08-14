@@ -1,6 +1,4 @@
 import sqlite3
-import pandas as pd
-import re
 from datetime import datetime
 
 # Raw data from user
@@ -755,7 +753,7 @@ def clean_val(val):
     val = val.replace('%', '').replace(',', '').strip()
     try:
         return float(val)
-    except Exception as e:
+    except Exception:
         return val
 
 def parse_elite_data(data):

@@ -1,9 +1,7 @@
 import yfinance as yf
 import pandas as pd
-from typing import Dict, List, Optional
+from typing import Dict, List
 from .base import DataSource
-from modules.retry_utils import run_with_exponential_backoff
-import asyncio
 
 class YFinanceSource(DataSource):
     """

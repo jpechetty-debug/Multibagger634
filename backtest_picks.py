@@ -1,7 +1,5 @@
 import yfinance as yf
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
 def backtest_picks():
     # Load the Top 5 Picks from the CSV we just generated

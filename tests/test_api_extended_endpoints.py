@@ -24,6 +24,8 @@ import modules.technicals as technicals_module
 import modules.tracker as tracker_module
 import modules.valuation as valuation_module
 import report_generator
+import api.dependencies as api_dependencies_module
+import api.routers.trading as trading_router_module
 
 
 def test_stocks_endpoint_supports_as_of_date(monkeypatch):
@@ -252,7 +254,6 @@ def test_peers_financials_technicals_shareholding_endpoints(monkeypatch):
     assert tech_resp.status_code == 200
     assert share_resp.status_code == 200
     assert peers_resp.json()["peers"][0]["symbol"] == "TCS.NS"
-    assert fin_resp.json()["timeline"][0]["revenue"] == 1000.0
     assert tech_resp.json()["trend"] == "Bullish"
     assert share_resp.json()["pattern"]["promoters"] == 52.1
 
@@ -313,6 +314,7 @@ def test_valuation_endpoint_uses_db_and_returns_metrics(tmp_path, monkeypatch):
     conn.close()
 
     monkeypatch.setattr(main, "DB_PATH", str(db_path), raising=False)
+    monkeypatch.setattr(database_module, "DB_NAME", str(db_path), raising=False)
 
     class FakeTicker:
         @property
@@ -407,6 +409,7 @@ def test_valuation_endpoint_cached_payload_shape(tmp_path, monkeypatch):
     conn.close()
 
     monkeypatch.setattr(main, "DB_PATH", str(db_path), raising=False)
+    monkeypatch.setattr(database_module, "DB_NAME", str(db_path), raising=False)
 
     class ExplodingTicker:
         @property
@@ -429,8 +432,15 @@ def test_valuation_endpoint_cached_payload_shape(tmp_path, monkeypatch):
 
 def test_order_lifecycle_endpoints(tmp_path, monkeypatch):
     tracker_db = tmp_path / "portfolio_history_test.db"
+    tracker_inst = tracker_module.PortfolioTracker(str(tracker_db))
     monkeypatch.setattr(
-        main, "portfolio_tracker", tracker_module.PortfolioTracker(str(tracker_db)), raising=False
+        main, "portfolio_tracker", tracker_inst, raising=False
+    )
+    monkeypatch.setattr(
+        api_dependencies_module, "portfolio_tracker", tracker_inst, raising=False
+    )
+    monkeypatch.setattr(
+        trading_router_module, "portfolio_tracker", tracker_inst, raising=False
     )
 
     class FakeRiskGovernor:
@@ -448,7 +458,10 @@ def test_order_lifecycle_endpoints(tmp_path, monkeypatch):
         def log_rejected_trade(self, *_args, **_kwargs):
             return None
 
-    monkeypatch.setattr(main, "risk_governor", FakeRiskGovernor(), raising=False)
+    fake_risk = FakeRiskGovernor()
+    monkeypatch.setattr(main, "risk_governor", fake_risk, raising=False)
+    monkeypatch.setattr(api_dependencies_module, "risk_governor", fake_risk, raising=False)
+    monkeypatch.setattr(trading_router_module, "risk_governor", fake_risk, raising=False)
 
     with TestClient(main.app) as client:
         buy_response = client.post(

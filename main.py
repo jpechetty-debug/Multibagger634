@@ -1,34 +1,24 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-import sqlite3
-import pandas as pd
-import numpy as np
-import json
-import os
-import csv
 import asyncio
-import yfinance as yf
 from contextlib import asynccontextmanager
-
+from datetime import datetime, timedelta
 import socket
-socket.setdefaulttimeout(20.0)
-
 import threading
 import time
-from datetime import datetime, timedelta
-from typing import Any, Callable
 
-from modules.risk import RiskGovernor
-from modules.retry_utils import run_with_exponential_backoff
-from modules.tracker import PortfolioTracker
-from pydantic import BaseModel, Field
-
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from modules.symbol_utils import normalize_symbol
-from modules.revisions import analyze_revisions
-from modules.drift_monitor import monitor_drift
-from modules.allocation_hrp import HRPAllocator
+import pandas as pd
+import yfinance as yf
+
+from database import get_connection
+from modules.retry_utils import run_with_exponential_backoff
+from api.dependencies import (
+    manager, _run_blocking, _run_ticker_blocking,
+    _run_sqlite_write_with_retry, _run_sqlite_write_with_retry_sync,
+    _read_records, _json_safe_clean
+)
+
+socket.setdefaulttimeout(20.0)
 
 # Background Task for Periodic Price Updates
 @asynccontextmanager
@@ -44,84 +34,6 @@ async def lifespan(app: FastAPI):
         print("Background price updater stopped.")
 
 app = FastAPI(lifespan=lifespan)
-
-
-from api.dependencies import (
-    ConnectionManager, manager, blocking_io_semaphore, ticker_io_semaphore,
-    portfolio_tracker, risk_governor, regime_cache, movers_cache,
-    regime_cache_lock, movers_cache_lock, CACHE_QUARTERLY, CACHE_FUNDAMENTALS,
-    CACHE_PEERS, CACHE_AUDIT_TTL, OrderRequest, _run_blocking, _run_ticker_blocking,
-    _cache_is_fresh, _cache_set, _cache_invalidate
-)
-async def _run_sqlite_write_with_retry(
-    write_fn: Callable[[], Any], operation_name: str
-):
-    for attempt in range(SQLITE_WRITE_RETRIES):
-        try:
-            return await _run_blocking(write_fn)
-        except sqlite3.OperationalError as exc:
-            if _is_sqlite_lock_error(exc) and attempt < SQLITE_WRITE_RETRIES - 1:
-                wait = SQLITE_RETRY_BASE_SECONDS * (2 ** attempt)
-                print(f"SQLite lock during {operation_name}; retrying in {wait:.2f}s.")
-                await asyncio.sleep(wait)
-                continue
-            raise
-
-
-def _run_sqlite_write_with_retry_sync(
-    write_fn: Callable[[], Any], operation_name: str
-):
-    for attempt in range(SQLITE_WRITE_RETRIES):
-        try:
-            return write_fn()
-        except sqlite3.OperationalError as exc:
-            if _is_sqlite_lock_error(exc) and attempt < SQLITE_WRITE_RETRIES - 1:
-                wait = SQLITE_RETRY_BASE_SECONDS * (2 ** attempt)
-                print(
-                    f"SQLite lock during {operation_name}; retrying in {wait:.2f}s."
-                )
-                time.sleep(wait)
-                continue
-            raise
-
-def get_connection():
-    _db_url = os.getenv('DATABASE_URL', f'sqlite:///./{DB_NAME}')
-    if _db_url.startswith('postgresql'):
-        try:
-            from sqlalchemy import create_engine
-            engine = create_engine(_db_url, pool_pre_ping=True)
-            return engine.raw_connection()
-        except Exception as exc:
-            print(f'[WARN] PostgreSQL failed ({exc}), falling back to SQLite.')
-    conn = sqlite3.connect(DB_NAME, timeout=5, check_same_thread=False)
-    conn.execute(f'PRAGMA busy_timeout={DB_BUSY_TIMEOUT_MS}')
-    conn.execute('PRAGMA journal_mode=WAL')
-    return conn
-
-
-def _cache_is_fresh(cache: dict, ttl_seconds: int) -> bool:
-    payload = cache.get("payload")
-    ts = float(cache.get("timestamp", 0.0) or 0.0)
-    return payload is not None and (time.time() - ts) < ttl_seconds
-
-
-def _cache_set(cache: dict, payload: Any):
-    cache["payload"] = payload
-    cache["timestamp"] = time.time()
-
-
-def _cache_invalidate(cache: dict):
-    cache["timestamp"] = 0.0
-
-
-def _read_records(query: str):
-    conn = get_connection()
-    try:
-        df = pd.read_sql(query, conn)
-        # to_json handles NaN/Inf as null automatically
-        return json.loads(df.to_json(orient="records", double_precision=2))
-    finally:
-        conn.close()
 
 
 # Override with a write-retry aware implementation.
@@ -345,17 +257,6 @@ if __name__ == "__main__":
 
 
 
-
-# Helper to clean JSON (NaN/Inf)
-def _json_safe_clean(obj):
-    if isinstance(obj, list):
-        return [_json_safe_clean(x) for x in obj]
-    if isinstance(obj, dict):
-        return {k: _json_safe_clean(v) for k, v in obj.items()}
-    if isinstance(obj, float):
-        if np.isnan(obj) or np.isinf(obj):
-            return None
-    return obj
 
 # ==========================================
 # ROUTER REGISTRATION

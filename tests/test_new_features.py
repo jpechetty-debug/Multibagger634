@@ -1,10 +1,7 @@
 import sys
 import os
-import json
 import sqlite3
-import pandas as pd
 from pathlib import Path
-from datetime import datetime
 
 # Add root to sys.path
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,9 +9,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from modules.thesis_monitor import record_buy_thesis, check_thesis, check_all_thesis_breaks
+from modules.thesis_monitor import record_buy_thesis, check_thesis
 from modules.promoter_intel import calculate_promoter_score
 from modules.estimates import analyze_estimate_momentum, compute_own_estimate
 

@@ -104,8 +104,10 @@ class ValuationEngine:
         # Graham is often too conservative for growth stocks, DCF too sensitive.
         # Let's verify valid values first
         valid_models = []
-        if dcf > 0: valid_models.append(dcf)
-        if graham > 0: valid_models.append(graham)
+        if dcf > 0:
+            valid_models.append(dcf)
+        if graham > 0:
+            valid_models.append(graham)
         # EPV is strictly no-growth, useful floor
         
         if not valid_models:
@@ -122,8 +124,10 @@ class ValuationEngine:
         mos = ((consensus - price) / consensus) * 100 if consensus > 0 else 0
         
         verdict = "FAIRLY VALUED"
-        if mos > 20: verdict = "UNDERVALUED"
-        elif mos < -20: verdict = "OVERVALUED"
+        if mos > 20:
+            verdict = "UNDERVALUED"
+        elif mos < -20:
+            verdict = "OVERVALUED"
         
         return {
             "intrinsic_value": round(consensus, 2),

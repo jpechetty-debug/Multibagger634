@@ -3,24 +3,28 @@ Quarterly Results Timeline Module
 Analyzes quarterly financial performance trends over time.
 """
 
-import logging
-import pandas as pd
-logger = logging.getLogger(__name__)
-import yfinance as yf
-from typing import List, Dict, Optional
-from datetime import datetime
 import asyncio
+from datetime import datetime
+import logging
+from typing import Dict, List, Optional
 import numpy as np
+import pandas as pd
+import yfinance as yf
 from modules.retry_utils import run_with_exponential_backoff
+
+logger = logging.getLogger(__name__)
 
 def _safe_float(value) -> Optional[float]:
     """Return finite float or None."""
     try:
-        if value is None: return None
+        if value is None:
+            return None
         parsed = float(value)
-        if not np.isfinite(parsed): return None
+        if not np.isfinite(parsed):
+            return None
         return parsed
-    except (TypeError, ValueError): return None
+    except (TypeError, ValueError):
+        return None
 
 async def get_quarterly_timeline(symbol: str, quarters: int = 12) -> Dict:
     """

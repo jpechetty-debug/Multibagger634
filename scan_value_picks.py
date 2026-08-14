@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 
 import screener
 import pandas as pd
-import sqlite3
 
 def scan_picks():
     picks = ["COALINDIA.NS", "ONGC.NS", "POWERGRID.NS", "HEROMOTOCO.NS", "RECLTD.NS", "PFC.NS"]
