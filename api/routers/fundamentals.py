@@ -7,6 +7,7 @@ import pandas as pd
 import json
 import os
 import math
+import numpy as np
 from datetime import datetime, timedelta
 
 from api.dependencies import (
@@ -14,6 +15,7 @@ from api.dependencies import (
     regime_cache, movers_cache, regime_cache_lock, movers_cache_lock,
     CACHE_QUARTERLY, CACHE_FUNDAMENTALS, CACHE_PEERS, CACHE_AUDIT_TTL,
     _run_blocking, _run_ticker_blocking, _cache_is_fresh, _cache_set, _cache_invalidate,
+    _json_safe_clean,
     OrderRequest
 )
 import config

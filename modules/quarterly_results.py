@@ -274,7 +274,8 @@ def analyze_quarterly_trends(quarters: List[Dict]) -> Dict:
     
     quarters_with_growth = sum(1 for q in quarters if q.get('revenue_growth_qoq') and q['revenue_growth_qoq'] > 0)
     total_data = sum(1 for q in quarters if q.get('revenue_growth_qoq') is not None)
-    consistency = 'HIGH' if (quarters_with_growth / total_data if total_data else 0) >= 0.75 else ('MEDIUM' if (quarters_with_growth / total_data if total_data else 0) >= 0.5 else 'LOW')
+    growth_ratio = quarters_with_growth / total_data if total_data else 0
+    consistency = 'HIGH' if growth_ratio >= 0.75 else ('MEDIUM' if growth_ratio >= 0.5 else 'LOW')
     
     return {
         'revenue_trend': revenue_trend,

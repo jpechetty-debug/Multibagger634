@@ -336,7 +336,7 @@ const QuarterlyTimeline = ({ symbol }) => {
                         <div className="mt-2 space-y-1">
                             {data.alerts.map((alert, i) => (
                                 <div key={i} className="text-[10px] text-amber-400/90 flex items-start gap-1">
-                                    <span>⚠️</span> <span>{alert}</span>
+                                    <span>⚠️</span> <span>{alert.message}</span>
                                 </div>
                             ))}
                         </div>
@@ -369,7 +369,7 @@ const QuarterlyTimeline = ({ symbol }) => {
                                     {q.revenue_growth_yoy ? (q.revenue_growth_yoy > 0 ? '+' : '') + q.revenue_growth_yoy.toFixed(1) + '%' : '-'}
                                 </td>
                                 <td className="p-2 text-right">{q.profit ? q.profit.toFixed(2) : '-'}</td>
-                                <td className="p-2 text-right text-amber-400/90">{q.margin ? (q.margin * 100).toFixed(1) + '%' : '-'}</td>
+                                <td className="p-2 text-right text-amber-400/90">{q.margin ? q.margin.toFixed(1) + '%' : '-'}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -568,7 +568,6 @@ function Drawer({stock, onClose}) {
   const [technicals, setTechnicals] = useState(null);
   const [governance, setGovernance] = useState(null);
   const [ownership, setOwnership] = useState(null);
-  const [financials, setFinancials] = useState(null);
   const [revisions, setRevisions] = useState(null);
   const [drift, setDrift] = useState(null);
   const [swarm, setSwarm] = useState(null);
@@ -580,18 +579,17 @@ function Drawer({stock, onClose}) {
     const sym = stock.Symbol || stock.symbol;
     if (!sym) return;
     const ctrl = new AbortController();
-    setLoading(true); setReport(null); setValuation(null); setTechnicals(null); setGovernance(null); setOwnership(null); setFinancials(null);
+    setLoading(true); setReport(null); setValuation(null); setTechnicals(null); setGovernance(null); setOwnership(null);
     setRevisions(null); setDrift(null);
     
     const fetchAll = async () => {
       try {
-        const [rep, val, tech, gov, own, fin, rev, drf] = await Promise.all([
+        const [rep, val, tech, gov, own, rev, drf] = await Promise.all([
           fetchJSON(`/api/reports/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/valuation/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/technicals/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/governance/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/shareholding/${sym}`, ctrl.signal).catch(()=>null),
-          fetchJSON(`/api/financials/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/revisions/${sym}`, ctrl.signal).catch(()=>null),
           fetchJSON(`/api/drift/${sym}`, ctrl.signal).catch(()=>null),
         ]);
@@ -600,7 +598,6 @@ function Drawer({stock, onClose}) {
         setTechnicals(tech);
         setGovernance(gov);
         setOwnership(own);
-        setFinancials(fin);
         setRevisions(rev);
         setDrift(drf);
       } finally {

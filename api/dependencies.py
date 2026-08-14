@@ -55,9 +55,22 @@ CACHE_PEERS = {}
 CACHE_AUDIT_TTL = 3600  
 
 import time
+import numpy as np
 from typing import Callable, Any
 
+def _json_safe_clean(obj):
+    if isinstance(obj, list):
+        return [_json_safe_clean(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _json_safe_clean(v) for k, v in obj.items()}
+    if isinstance(obj, float):
+        if np.isnan(obj) or np.isinf(obj):
+            return None
+    return obj
+
 def _cache_is_fresh(cache_dict, ttl):
+    if not cache_dict or "timestamp" not in cache_dict:
+        return False
     return (time.time() - cache_dict["timestamp"]) < ttl
 
 def _cache_set(cache_dict, payload):

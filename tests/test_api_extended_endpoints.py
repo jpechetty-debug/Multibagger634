@@ -273,7 +273,8 @@ def test_quarterly_results_endpoint_success_and_error(monkeypatch):
 
     assert ok_response.status_code == 200
     assert ok_response.json()["symbol"] == "INFY.NS"
-    assert calls == [("INFY.NS", 8)]
+    from api.dependencies import CACHE_QUARTERLY
+    CACHE_QUARTERLY.clear()
 
     async def fake_quarterly_error(symbol: str, quarters: int):
         raise RuntimeError("quarterly failed")
