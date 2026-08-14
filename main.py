@@ -35,6 +35,30 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+import config
+from fastapi.middleware.cors import CORSMiddleware
+
+# ── CORS ── source from config, never wildcard in production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ==========================================
+# ROUTER REGISTRATION
+# ==========================================
+from api.routers import market, analysis, trading, screener, fundamentals, technicals, system
+
+app.include_router(market.router, tags=["Market"])
+app.include_router(analysis.router, tags=["Analysis"])
+app.include_router(trading.router, tags=["Trading"])
+app.include_router(screener.router, tags=["Screener"])
+app.include_router(fundamentals.router, tags=["Fundamentals"])
+app.include_router(technicals.router, tags=["Technicals"])
+app.include_router(system.router, tags=["System"])
 
 # Override with a write-retry aware implementation.
 async def update_prices_background():
@@ -128,106 +152,19 @@ async def update_prices_background():
 
         await asyncio.sleep(300)
 
-# API Endpoints
-
-
-
-
-
-
-
-
-
-# Advanced Forensics API
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.mount("/static", StaticFiles(directory="web-ui"), name="static")
 
-
-
-# News API with Sentiment Intelligence (Phase 63 & 64)
-
-# Market Movers API (Phase 64)
-
-
-
-# Valuation API
-
-
-
-
-
-# Technicals API
-
-
-# Shareholding API
-# Promoter Intelligence API
-
-
-# Quarterly Results Timeline API
-
-# Price vs Fundamentals API
-
-# Estimates Momentum API
-
-# Alpha Vantage Earnings API
-
-# Alpha Vantage Budget Status
-
-def weekly_audit_loop():
-    """Background loop to refresh fundamental data every 7 days"""
+def health_ping_loop():
+    """Lightweight background loop to keep connections alive."""
     while True:
         try:
-            print("Checking for expired Forensic Audits...")
+            print(f"[{datetime.now()}] Background health ping...")
             conn = get_connection()
-            # Find stocks not audited in last 7 days
-            seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
-            query = (
-                "SELECT symbol FROM multibaggers "
-                "WHERE last_audited IS NULL OR last_audited < ? "
-                "LIMIT 5"
-            )
-            expired_stocks = pd.read_sql(query, conn, params=(seven_days_ago,))[
-                "symbol"
-            ].tolist()
+            # Just do a trivial query to keep the DB connection alive if needed
+            conn.execute("SELECT 1").fetchone()
             conn.close()
-             
-            if expired_stocks:
-                print(f"Refreshing Forensic Audit for: {', '.join(expired_stocks)}")
-                # In a real app, we'd call screener.get_stock_data(symbol)
-                # For this terminal, we update the timestamp to signify 'Audit Complete'
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                def _write_audit_marks():
-                    conn_write = get_connection()
-                    try:
-                        for symbol in expired_stocks:
-                            conn_write.execute(
-                                "UPDATE multibaggers SET last_audited = ? WHERE symbol = ?",
-                                (now_str, symbol),
-                            )
-                        conn_write.commit()
-                    finally:
-                        conn_write.close()
-
-                _run_sqlite_write_with_retry_sync(
-                    _write_audit_marks, "weekly audit refresh"
-                )
         except Exception as e:
-            print(f"Audit Loop Error: {e}")
+            print(f"Health Ping Error: {e}")
         
         # Check every 6 hours
         time.sleep(6 * 3600)
@@ -237,36 +174,17 @@ def weekly_audit_loop():
 
 if __name__ == "__main__":
     import uvicorn
-    # Start Weekly Audit Thread
-    audit_thread = threading.Thread(target=weekly_audit_loop, daemon=True)
+    import os
+    # Start Health Ping Thread
+    audit_thread = threading.Thread(target=health_ping_loop, daemon=True)
     audit_thread.start()
     
-    print("Starting Server... Access Dashboard at: http://127.0.0.1:9005")
+    port = int(os.getenv("API_PORT", 9005))
+    host = os.getenv("API_HOST", "0.0.0.0")
+    
+    print(f"Starting Server... Access Dashboard at: http://{host}:{port}")
     uvicorn.run(
         "main:app", 
-        host="127.0.0.1", 
-        port=9005, 
-        reload=True,
-        reload_excludes=["*.db", "*.db-journal", "*.db-wal", "*.log", "*.txt"]
+        host=host, 
+        port=port
     )
-
-
-
-
-
-
-
-
-
-# ==========================================
-# ROUTER REGISTRATION
-# ==========================================
-from api.routers import market, analysis, trading, screener, fundamentals, technicals, system
-
-app.include_router(market.router, tags=["Market"])
-app.include_router(analysis.router, tags=["Analysis"])
-app.include_router(trading.router, tags=["Trading"])
-app.include_router(screener.router, tags=["Screener"])
-app.include_router(fundamentals.router, tags=["Fundamentals"])
-app.include_router(technicals.router, tags=["Technicals"])
-app.include_router(system.router, tags=["System"])

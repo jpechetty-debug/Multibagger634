@@ -36,3 +36,14 @@ tenacity
 pandas_market_calendars
 requests
 python-telegram-bot
+
+# ── Added from requirements_additions.txt ──
+prometheus-fastapi-instrumentator>=7.0.0
+prometheus-client>=0.20.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=5.0.0
+python-dotenv>=1.0.0
+pydantic-settings>=2.0
+mcp
+fastmcp

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+import os
+from fastapi import APIRouter, Depends, Header, HTTPException
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -8,6 +9,11 @@ from api.dependencies import (
     regime_cache, _run_blocking, OrderRequest
 )
 from database import get_connection
+
+async def verify_api_key(x_api_key: str = Header(...)):
+    expected_key = os.getenv("API_KEY", "paper_trade_test_key")
+    if x_api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
 
 router = APIRouter()
 
@@ -22,7 +28,7 @@ def get_performance():
         "avg_hold": "47 Days"
     }
 
-@router.post("/api/order")
+@router.post("/api/order", dependencies=[Depends(verify_api_key)])
 async def place_order(order: OrderRequest):
     """Order lifecycle endpoint for paper execution (BUY/SELL)."""
     try:

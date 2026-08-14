@@ -11,8 +11,9 @@ Usage:
 import sqlite3
 import os
 import pandas as pd
-from db.engine import engine, init_tables, IS_SQLITE
 
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+IS_SQLITE = not DATABASE_URL.startswith("postgresql")
 
 SQLITE_SOURCE = os.getenv("SQLITE_SOURCE", "stocks.db")
 
@@ -29,7 +30,6 @@ MIGRATION_ORDER = [
     "buy_thesis",
 ]
 
-
 def _read_sqlite_table(sqlite_conn, table_name: str) -> pd.DataFrame:
     """Safely read a table from SQLite, returning empty DataFrame if missing."""
     try:
@@ -38,24 +38,28 @@ def _read_sqlite_table(sqlite_conn, table_name: str) -> pd.DataFrame:
         print(f"  ⚠ Table '{table_name}' not found in SQLite source. Skipping.")
         return pd.DataFrame()
 
-
 def run_migration():
     """Execute the full SQLite → PostgreSQL migration."""
     if IS_SQLITE:
         print("⚠ DATABASE_URL points to SQLite. Migration requires a PostgreSQL target.")
-        print("  Set DATABASE_URL=postgresql+psycopg://user:pass@host:5432/sovereign_db")
+        print("  Set DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/sovereign_db")
         return
 
     if not os.path.exists(SQLITE_SOURCE):
         print(f"⚠ SQLite source '{SQLITE_SOURCE}' not found. Nothing to migrate.")
         return
+        
+    try:
+        from sqlalchemy import create_engine
+        engine = create_engine(DATABASE_URL)
+    except ImportError:
+        print("⚠ Missing required libraries. Run: pip install sqlalchemy psycopg2-binary")
+        return
 
     print(f"🔄 Starting migration: {SQLITE_SOURCE} → PostgreSQL")
-    print(f"   Target: {engine.url}")
+    print(f"   Target: {DATABASE_URL}")
 
-    # Step 1: Create all tables in PostgreSQL
-    print("\n📐 Creating PostgreSQL schema...")
-    init_tables()
+    print("\n📐 Ensure your PostgreSQL tables are created. (Auto-creation removed)")
 
     # Step 2: Connect to SQLite source
     sqlite_conn = sqlite3.connect(SQLITE_SOURCE)
