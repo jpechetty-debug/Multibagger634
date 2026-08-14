@@ -7,6 +7,7 @@ import pandas as pd
 import json
 import os
 import math
+import time
 import numpy as np
 from datetime import datetime, timedelta
 
@@ -25,10 +26,8 @@ from database import get_connection
 router = APIRouter()
 
 async def _with_cache(cache_dict, symbol, fetch_fn):
-    import time
     start_time = time.time()
     
-    from api.dependencies import _cache_is_fresh, _cache_set, CACHE_AUDIT_TTL
     if _cache_is_fresh(cache_dict.get(symbol, {}), CACHE_AUDIT_TTL):
         print(f"CACHE HIT for {symbol}")
         return cache_dict[symbol]["payload"]
