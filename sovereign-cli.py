@@ -295,10 +295,10 @@ async def cmd_scan(args):
         return
 
     universe_args = []
-    if args.universe == "QUICK":
+    if args.universe.upper() == "QUICK":
         universe_args = ["--smoke"]
-    elif args.universe.upper() == "SECTORS":
-        universe_args = ["--universe", "SECTORS"]
+    else:
+        universe_args = ["--universe", args.universe]
 
     print("🚀 Starting scan via subprocess...")
     import subprocess

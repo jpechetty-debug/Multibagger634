@@ -94,3 +94,4 @@ runtime/
 
 # Agent State
 .gemini/
+.agent/

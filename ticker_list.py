@@ -678,3 +678,32 @@ SECTORS = [
     # Branded Consumption / FMCG Midcap
     "RADICO.NS", "BIKAJI.NS", "DODLA.NS", "JYOTHYLAB.NS"
 ]
+
+# Separate list for Commodities (ETFs)
+COMMODITIES = [
+    "GOLDBEES.NS",
+    "SILVERBEES.NS"
+]
+
+# Deep Value & High Conviction dividend/capex plays
+VALUE_PICKS = [
+    "COALINDIA.NS",
+    "ONGC.NS",
+    "POWERGRID.NS",
+    "HEROMOTOCO.NS",
+    "RECLTD.NS",
+    "PFC.NS"
+]
+
+# Consolidated high-conviction ideas
+MASTER_PICKS = sorted(list(set(SECTORS + VALUE_PICKS)))
+
+# Unified universe registry
+UNIVERSES = {
+    "STANDARD": TICKERS,
+    "SECTORS": SECTORS,
+    "COMMODITIES": COMMODITIES,
+    "VALUE_PICKS": VALUE_PICKS,
+    "MASTER_PICKS": MASTER_PICKS,
+}
+

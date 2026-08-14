@@ -11,7 +11,12 @@ from api.dependencies import (
 from database import get_connection
 
 async def verify_api_key(x_api_key: str = Header(...)):
-    expected_key = os.getenv("API_KEY", "paper_trade_test_key")
+    expected_key = os.getenv("API_KEY")
+    if not expected_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Server authentication configuration error: API_KEY is not configured.",
+        )
     if x_api_key != expected_key:
         raise HTTPException(status_code=403, detail="Invalid API Key")
 

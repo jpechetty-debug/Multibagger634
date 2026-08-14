@@ -1074,7 +1074,7 @@ def main():
     args = parser.parse_args()
 
     import config
-    from ticker_list import MULTIBAGGER_HUNT, SECTORS
+    from ticker_list import MULTIBAGGER_HUNT, SECTORS, UNIVERSES
 
     targeted_symbols = {s.strip().upper() for s in args.symbols.split(",")} if args.symbols else set()
     is_full_scan = len(targeted_symbols) == 0
@@ -1083,17 +1083,25 @@ def main():
     scan_tickers = TICKERS
     active_filters = None
 
-    if args.universe.upper() == "SECTORS":
-        scan_tickers = SECTORS
-        active_filters = MULTIBAGGER_HUNT.get("filters")
-        print(f" Specialized Universe: SECTORS ({len(scan_tickers)} symbols)")
-        print(f" Applying Framework Filters: {MULTIBAGGER_HUNT.get('desc')}")
-    elif args.symbols:
+    if args.symbols:
         scan_tickers = sorted(targeted_symbols)
         print(f" Targeted Scan: {scan_tickers}")
-    elif args.smoke:
+    elif args.universe:
+        u_key = args.universe.upper()
+        if u_key in UNIVERSES:
+            scan_tickers = UNIVERSES[u_key]
+            if u_key == "SECTORS":
+                active_filters = MULTIBAGGER_HUNT.get("filters")
+                print(f" Specialized Universe: SECTORS ({len(scan_tickers)} symbols)")
+                print(f" Applying Framework Filters: {MULTIBAGGER_HUNT.get('desc')}")
+            else:
+                print(f" Specialized Universe: {u_key} ({len(scan_tickers)} symbols)")
+        else:
+            print(f" ⚠️ Unknown universe '{args.universe}'. Defaulting to STANDARD ({len(scan_tickers)} symbols).")
+
+    if args.smoke:
         scan_tickers = scan_tickers[:10]
-        print(" Smoke Test: Scanning first 10 symbols")
+        print(f" Smoke Test: Scanning first {len(scan_tickers)} symbols")
 
     # Auto-prune/flag integration: skip currently inactive symbols for full scans.
     auto_flag_enable = bool(getattr(config, "AUTO_FLAG_INVALID_SYMBOLS", True))
