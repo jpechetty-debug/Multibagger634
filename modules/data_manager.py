@@ -5,6 +5,7 @@
 import asyncio
 import yfinance as yf
 from modules.yf_session import get_yf_session
+from modules.bhavcopy import get_eod_price, download_bhavcopy
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 from typing import Dict, List, Optional, Any
@@ -375,6 +376,44 @@ class YFinanceProvider(DataProvider):
             "cash_flow": cf
         }
 
+
+class BhavcopyProvider(DataProvider):
+    """Instant EOD price from local bhavcopy.db — zero network calls."""
+    @property
+    def name(self): return "bhavcopy"
+
+    def __init__(self, executor):
+        self.executor = executor
+        self.available = True
+        # Auto-download on first use
+        try:
+            download_bhavcopy()
+        except Exception as e:
+            logger.warning(f"Bhavcopy auto-download failed: {e}")
+            self.available = False
+
+    async def fetch_fundamentals(self, symbol: str) -> Dict:
+        loop = asyncio.get_running_loop()
+        row = await loop.run_in_executor(self.executor, get_eod_price, symbol)
+        if not row:
+            raise ValueError(f"No bhavcopy data for {symbol}")
+        info = {
+            "currentPrice": row["close"],
+            "previousClose": row["prev_close"],
+            "open": row["open"],
+            "dayHigh": row["high"],
+            "dayLow": row["low"],
+        }
+        return {
+            "symbol": symbol,
+            "source": self.name,
+            "price": row["close"],
+            "info": info,
+            "financials": pd.DataFrame(),
+            "balance_sheet": pd.DataFrame(),
+            "cash_flow": pd.DataFrame(),
+        }
+
 # --- Main Data Manager ---
 class DataManager:
     _shared_fail_streak = {}
@@ -392,6 +431,7 @@ class DataManager:
         
         # Priority Fallback List
         self.providers = [
+            BhavcopyProvider(self.executor),
             PNSEAProvider(self.executor),
             NSEPythonProvider(self.executor),
             YFinanceProvider(self.executor)
