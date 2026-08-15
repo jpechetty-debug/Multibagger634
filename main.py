@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 import socket
@@ -25,9 +26,9 @@ socket.setdefaulttimeout(20.0)
 async def lifespan(app: FastAPI):
     # Startup: Check API_KEY auth configuration
     if not os.getenv("API_KEY"):
-        print("⚠️  [SECURITY NOTICE] API_KEY environment variable is not set. Order placement (/api/order) will fail closed.")
+        print("[SECURITY NOTICE] API_KEY environment variable is not set. Order placement (/api/order) will fail closed.")
     else:
-        print("🔒 [SECURITY] API_KEY authentication configured for protected endpoints.")
+        print("[SECURITY] API_KEY authentication configured for protected endpoints.")
 
     # Startup: Start background task
     bg_task = asyncio.create_task(update_prices_background())

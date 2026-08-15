@@ -364,6 +364,9 @@ class YFinanceProvider(DataProvider):
 
 # --- Main Data Manager ---
 class DataManager:
+    _shared_fail_streak = {}
+    _shared_cooldown_until = {}
+
     def __init__(self, max_concurrency: int = 15):
         self.max_concurrency = int(max_concurrency)
         self.semaphore = asyncio.Semaphore(max_concurrency)
@@ -371,8 +374,8 @@ class DataManager:
         self.provider_timeout_seconds = 16
         self.yfinance_timeout_seconds = 22
         self.history_timeout_seconds = 18
-        self.provider_fail_streak = {}
-        self.provider_cooldown_until = {}
+        self.provider_fail_streak = self._shared_fail_streak
+        self.provider_cooldown_until = self._shared_cooldown_until
         
         # Priority Fallback List
         self.providers = [
@@ -407,8 +410,9 @@ class DataManager:
         streak = int(self.provider_fail_streak.get(provider_name, 0)) + 1
         self.provider_fail_streak[provider_name] = streak
         if transient and streak >= 4:
-            cooldown = min(30, streak * 2)
+            cooldown = min(120, streak * 10)  # Capped at 2 mins for standard rate limits
             self.provider_cooldown_until[provider_name] = time.time() + cooldown
+            logger.warning(f"🚨 Provider {provider_name} entered cooldown for {cooldown}s (streak: {streak})")
 
     async def _adaptive_pause(self, provider_name: str):
         streak = int(self.provider_fail_streak.get(provider_name, 0))
@@ -478,6 +482,12 @@ class DataManager:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     async def fetch_history(self, symbol: str, period: str = "1y") -> pd.DataFrame:
         """Fetch historical price data with quality checks"""
+        # Respect global cooldown to avoid hammering when rate-limited
+        cooldown_remaining = self.provider_cooldown_until.get("yfinance", 0) - time.time()
+        if cooldown_remaining > 0:
+            logger.warning(f"[{symbol}] yfinance in cooldown for {cooldown_remaining:.1f}s. Skipping history.")
+            raise ConnectionError("yfinance globally rate limited")
+
         async with self.semaphore:
             loop = asyncio.get_running_loop()
             ticker = yf.Ticker(symbol)
@@ -489,10 +499,13 @@ class DataManager:
                         timeout=self.history_timeout_seconds,
                     )
                 except Exception as exc:
-                    if attempt == 0 and self._is_transient_error(exc):
+                    transient = self._is_transient_error(exc)
+                    self._record_provider_failure("yfinance", transient=transient)
+                    if attempt == 0 and transient:
                         await asyncio.sleep(0.6)
                         continue
                     raise
+                self._record_provider_success("yfinance")
                 if df.empty or 'Close' not in df.columns:
                     if attempt == 0:
                         await asyncio.sleep(0.5)

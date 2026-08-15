@@ -526,7 +526,7 @@ function SignalRow({stock, idx, selected, onClick}) {
   const chg = stock.Change_Pct || stock.change_pct || 0;
   const score = stock.Score || stock.score || 0;
   const action = stock.Action || stock.action || 'WATCH';
-  const sector = (stock.Sector || stock.sector || '—').split(' ').slice(0,2).join(' ');
+  const sector = (stock.Sector || stock.sector || '—');
   return (
     <div className={`trow${selected?' sel':''}`} style={{animationDelay:`${idx*0.03}s`}} onClick={onClick}>
       <div className="rank-n c">{idx+1}</div>
