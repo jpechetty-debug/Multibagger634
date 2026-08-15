@@ -1,16 +1,16 @@
 # Phase 49: Alpha Attribution Report
 
 ## Which Factor is Winning? (1-Year Lookback)
-Dominant Regime: Low Volatility (113.54% Return)
+Dominant Regime: Quality (High ROE) (36.81% Return)
 
-| Factor              |   Return_1Y |   Win_Rate | Top_Pick      |
-|:--------------------|------------:|-----------:|:--------------|
-| Low Volatility      |   113.536   |         90 | STYLAMIND.NS  |
-| Quality (High ROE)  |     4.01354 |         45 | INDIQUBE.NS   |
-| Value (Low PE)      |    -5.7625  |         30 | TATASTEEL.NS  |
-| Growth (High Sales) |   -15.2267  |         25 | JIOFIN.NS     |
-| Momentum (High RS)  |   -22.2143  |         20 | SILVERBEES.NS |
+| Factor              |   Return_1Y |   Win_Rate | Top_Pick     |
+|:--------------------|------------:|-----------:|:-------------|
+| Quality (High ROE)  |    36.808   |    50      | SPARC.NS     |
+| Low Volatility      |    33.339   |    45      | NMDC.NS      |
+| Growth (High Sales) |    -3.51517 |    44.4444 | TIL.NS       |
+| Value (Low PE)      |    -7.271   |    40      | SPARC.NS     |
+| Momentum (High RS)  |   -17.6775  |    20      | INDOSOLAR.NS |
 
 ### Analysis
-- Low Volatility is the current leader for trailing 1-year performance.
+- Quality (High ROE) is the current leader for trailing 1-year performance.
 - Track rotations by comparing Value vs Momentum vs Quality each full scan.
