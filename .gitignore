@@ -95,3 +95,8 @@ runtime/
 # Agent State
 .gemini/
 .agent/
+
+# Bhavcopy caches
+bhavcopy.db
+scratch/
+*.csv
