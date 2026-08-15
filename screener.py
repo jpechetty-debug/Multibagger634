@@ -1731,10 +1731,30 @@ def main():
         print("Saved to csv.")
         
         # Save to SQLite
-        # Save to SQLite
         try:
             import database
             database.save_multibaggers(df)
+            
+            # Phase 1: DuckDB Feature Store
+            try:
+                import modules.feature_store as fs
+                
+                quality_cols = ["Symbol", "Avg_ROE_5Y%", "Piotroski_F_Score", "Debt_to_Equity", "CFO_PAT_Ratio"]
+                quality_df = df[[c for c in quality_cols if c in df.columns]]
+                fs.save_features(quality_df, "quality")
+                
+                val_cols = ["Symbol", "PE_Ratio", "Price_to_Book", "Market_Cap_Cr"]
+                val_df = df[[c for c in val_cols if c in df.columns]]
+                fs.save_features(val_df, "valuation")
+                
+                mom_cols = ["Symbol", "RS_Rating", "Price_above_200DMA", "Price_above_50DMA"]
+                mom_df = df[[c for c in mom_cols if c in df.columns]]
+                fs.save_features(mom_df, "momentum")
+                print("Saved feature snapshots to DuckDB Feature Store.")
+            except Exception as e:
+                import logging
+                logging.error(f"DuckDB Feature Store error: {e}", exc_info=True)
+                
         except Exception as e:
             import logging
             logging.error(f"Database error while saving multibaggers: {e}", exc_info=True)

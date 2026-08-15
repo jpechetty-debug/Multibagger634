@@ -80,3 +80,31 @@ def analyze_alpha_attribution(portfolio, universe):
     print("-" * 55)
     print(f"🏆 PRIMARY ALPHA DRIVER: {dominant_factor.upper()}")
     print("="*50 + "\n")
+
+import pandas as pd
+
+def daily_factor_contribution(portfolio_returns: pd.Series, factor_exposures: pd.DataFrame, factor_returns: pd.DataFrame) -> pd.DataFrame:
+    "\""
+    Phase 42: Alpha Attribution Engine.
+    Decomposes daily portfolio returns into specific factor contributions.
+    
+    Args:
+        portfolio_returns: Series of portfolio daily returns.
+        factor_exposures: DataFrame of portfolio active exposures to each factor.
+        factor_returns: DataFrame of daily factor returns (the 'factor premium').
+        
+    Returns:
+        DataFrame showing the daily return contribution attributed to each factor, 
+        along with the unexplained (idiosyncratic) alpha.
+    "\""
+    if factor_exposures.empty or factor_returns.empty:
+        return pd.DataFrame()
+        
+    # Element-wise multiplication to get contribution per factor
+    contributions = factor_exposures.multiply(factor_returns)
+    
+    # Calculate the unexplained idiosyncratic return
+    if portfolio_returns is not None and not portfolio_returns.empty:
+        contributions['Idiosyncratic_Alpha'] = portfolio_returns - contributions.sum(axis=1)
+        
+    return contributions

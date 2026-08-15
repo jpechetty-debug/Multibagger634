@@ -84,6 +84,12 @@ class PITDataStore:
     def insert_record(self, symbol: str, metric_name: str, value: float, 
                       report_date: str, as_of_date: str, source: str):
         """Inserts a tightly controlled PIT record using an auto-computed checksum."""
+        # --- Strict Audit Hook to Prevent Lookahead Bias ---
+        if str(report_date) > str(as_of_date):
+            error_msg = f"Lookahead Bias Detected: report_date ({report_date}) > as_of_date ({as_of_date})"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+            
         row_s = pd.Series([symbol, metric_name, value, report_date, as_of_date, source])
         chksum = checksum(row_s)
         
