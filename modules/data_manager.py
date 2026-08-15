@@ -271,16 +271,18 @@ class PNSEAProvider(DataProvider):
 class NSEPythonProvider(DataProvider):
     @property
     def name(self): return "nsepython"
-    
+
     def __init__(self, executor):
         self.executor = executor
         try:
-            from nsepython import get_quote, get_fundamentals, get_bulk_deals, get_pledged_shares, get_shareholding
-            self.api_quote = get_quote
-            self.api_fundamentals = get_fundamentals
-            self.api_bulk = get_bulk_deals
-            self.api_pledged = get_pledged_shares
-            self.api_share = get_shareholding
+            # NOTE: nsepython renamed its public API at some point - get_quote,
+            # get_fundamentals, get_pledged_shares, get_shareholding, get_bulk_deals
+            # no longer exist in current releases (>=2.9x). This provider was
+            # silently dead (ImportError -> available=False) on every run until
+            # this was caught by actually importing against the installed package.
+            from nsepython import nse_quote, get_bulkdeals
+            self.api_quote = nse_quote
+            self.api_bulk = get_bulkdeals
             self.available = True
         except ImportError:
             self.available = False
@@ -290,29 +292,39 @@ class NSEPythonProvider(DataProvider):
             raise ImportError("nsepython not available")
         loop = asyncio.get_running_loop()
         sym = symbol.replace(".NS", "")
-        
+
         quote = await loop.run_in_executor(self.executor, self.api_quote, sym)
-        fundamentals = await loop.run_in_executor(self.executor, self.api_fundamentals, sym)
-        pledged = await _run_executor_safe(loop, self.executor, lambda: self.api_pledged(sym), {})
-        bulk = await _run_executor_safe(loop, self.executor, lambda: self.api_bulk(sym), [])
-        shareholding = await _run_executor_safe(loop, self.executor, lambda: self.api_share(sym), {})
+        if not isinstance(quote, dict):
+            quote = {}
+        bulk = await _run_executor_safe(loop, self.executor, lambda: self.api_bulk(), [])
+
+        # Current nsepython no longer exposes dedicated fundamentals/pledge/
+        # shareholding endpoints, so this provider now covers price + basic
+        # security info only. ROE/growth/etc. still get backfilled from
+        # yfinance downstream (screener._needs_info_backfill) when missing -
+        # this provider mainly adds a second, non-Yahoo source of last-traded
+        # price so a Yahoo outage doesn't take the whole symbol down.
+        raw_info = quote.get("info", {}) if isinstance(quote.get("info"), dict) else {}
+        security_info = quote.get("securityInfo", {}) if isinstance(quote.get("securityInfo"), dict) else {}
+        price_info = quote.get("priceInfo", {}) if isinstance(quote.get("priceInfo"), dict) else {}
+        merged_raw = {**security_info, **raw_info}
+        info = _normalize_info(merged_raw, alias_map=_NSEPYTHON_INFO_ALIASES)
 
         yf_t = yf.Ticker(symbol)
         fin = await _run_executor_safe(loop, self.executor, lambda: yf_t.financials, pd.DataFrame())
         bs = await _run_executor_safe(loop, self.executor, lambda: yf_t.balance_sheet, pd.DataFrame())
         cf = await _run_executor_safe(loop, self.executor, lambda: yf_t.cash_flow, pd.DataFrame())
-        info = _normalize_info(fundamentals, alias_map=_NSEPYTHON_INFO_ALIASES)
 
         return {
             "symbol": symbol,
             "source": self.name,
-            "price": quote.get("priceInfo", {}).get("lastPrice"),
-            "roe": fundamentals.get("roe"),
-            "sales_growth": fundamentals.get("salesGrowth"),
-            "cfo_pat": fundamentals.get("cfoPatRatio", 0),
-            "pledge_percent": pledged.get("pledgePercent", 0),
-            "promoter_holding": shareholding.get("promoter", 0),
-            "fii_dii": shareholding.get("institutional", {}),
+            "price": price_info.get("lastPrice"),
+            "roe": info.get("returnOnEquity"),
+            "sales_growth": info.get("revenueGrowth"),
+            "cfo_pat": 0,
+            "pledge_percent": 0,
+            "promoter_holding": 0,
+            "fii_dii": {},
             "bulk_deals": bulk,
             "info": info,
             "financials": fin,
@@ -495,57 +507,87 @@ class DataManager:
                 return incomplete_payload
             return {"symbol": symbol, "error": "All providers failed", "source": "fallback_failed"}
 
-    async def _fetch_history_nse_direct(self, symbol: str, period: str = "1y") -> pd.DataFrame:
-        """Price history straight from NSE via pnsea, bypassing yfinance/Yahoo
-        entirely. Used as a fallback when yfinance is rate-limited or empty,
-        so a Yahoo outage no longer means zero price history for the scan."""
-        if not getattr(self._pnsea_provider, "available", False):
+    @staticmethod
+    def _normalize_nse_history_df(raw: pd.DataFrame) -> pd.DataFrame:
+        """Both pnsea and nsepython wrap the same NSE historical/cm/equity
+        endpoint and return the same CH_* record columns, so one normalizer
+        covers both."""
+        if raw is None or raw.empty or "CH_TIMESTAMP" not in raw.columns:
             return pd.DataFrame()
-        try:
-            loop = asyncio.get_running_loop()
-            days = 400  # default ~1y + buffer
-            try:
-                p = str(period).strip().lower()
-                if p.endswith("y"):
-                    days = int(float(p[:-1]) * 365) + 35
-                elif p.endswith("mo"):
-                    days = int(float(p[:-2]) * 30) + 15
-                elif p.endswith("d"):
-                    days = int(float(p[:-1])) + 10
-            except (ValueError, TypeError):
-                pass
-            to_date = datetime.now()
-            from_date = to_date - pd.Timedelta(days=days)
-            bare_symbol = symbol.replace(".NS", "").replace(".BO", "")
-            raw = await asyncio.wait_for(
-                loop.run_in_executor(
-                    self.executor,
-                    lambda: self._pnsea_provider.nse.equity.history(
-                        bare_symbol,
-                        from_date.strftime("%d-%m-%Y"),
-                        to_date.strftime("%d-%m-%Y"),
-                    ),
-                ),
-                timeout=self.history_timeout_seconds,
-            )
-            if raw is None or raw.empty:
-                return pd.DataFrame()
+        df = pd.DataFrame({
+            "Open": pd.to_numeric(raw.get("CH_OPENING_PRICE"), errors="coerce"),
+            "High": pd.to_numeric(raw.get("CH_TRADE_HIGH_PRICE"), errors="coerce"),
+            "Low": pd.to_numeric(raw.get("CH_TRADE_LOW_PRICE"), errors="coerce"),
+            "Close": pd.to_numeric(raw.get("CH_CLOSING_PRICE"), errors="coerce"),
+            "Volume": pd.to_numeric(raw.get("CH_TOT_TRADED_QTY"), errors="coerce"),
+        })
+        df.index = pd.to_datetime(raw.get("CH_TIMESTAMP"), errors="coerce")
+        return df.dropna(subset=["Close"]).sort_index()
 
-            df = pd.DataFrame({
-                "Open": pd.to_numeric(raw.get("CH_OPENING_PRICE"), errors="coerce"),
-                "High": pd.to_numeric(raw.get("CH_TRADE_HIGH_PRICE"), errors="coerce"),
-                "Low": pd.to_numeric(raw.get("CH_TRADE_LOW_PRICE"), errors="coerce"),
-                "Close": pd.to_numeric(raw.get("CH_CLOSING_PRICE"), errors="coerce"),
-                "Volume": pd.to_numeric(raw.get("CH_TOT_TRADED_QTY"), errors="coerce"),
-            })
-            df.index = pd.to_datetime(raw.get("CH_TIMESTAMP"), errors="coerce")
-            df = df.dropna(subset=["Close"]).sort_index()
-            if not df.empty:
-                logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (pnsea).")
-            return df
-        except Exception as exc:
-            logger.debug(f"[{symbol}] NSE-direct history fallback failed: {exc}")
-            return pd.DataFrame()
+    @staticmethod
+    def _period_to_days(period: str) -> int:
+        days = 400  # default ~1y + buffer
+        try:
+            p = str(period).strip().lower()
+            if p.endswith("y"):
+                days = int(float(p[:-1]) * 365) + 35
+            elif p.endswith("mo"):
+                days = int(float(p[:-2]) * 30) + 15
+            elif p.endswith("d"):
+                days = int(float(p[:-1])) + 10
+        except (ValueError, TypeError):
+            pass
+        return days
+
+    async def _fetch_history_nse_direct(self, symbol: str, period: str = "1y") -> pd.DataFrame:
+        """Price history straight from NSE (pnsea, then nsepython), bypassing
+        yfinance/Yahoo entirely. Used as a fallback when yfinance is
+        rate-limited or empty, so a Yahoo outage no longer means zero price
+        history for the scan. Two independent NSE-scraping libraries are
+        tried in sequence since either one can individually break/rate-limit."""
+        loop = asyncio.get_running_loop()
+        days = self._period_to_days(period)
+        to_date = datetime.now()
+        from_date = to_date - pd.Timedelta(days=days)
+        bare_symbol = symbol.replace(".NS", "").replace(".BO", "")
+        from_str, to_str = from_date.strftime("%d-%m-%Y"), to_date.strftime("%d-%m-%Y")
+
+        if getattr(self._pnsea_provider, "available", False):
+            try:
+                raw = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        self.executor,
+                        lambda: self._pnsea_provider.nse.equity.history(bare_symbol, from_str, to_str),
+                    ),
+                    timeout=self.history_timeout_seconds,
+                )
+                df = self._normalize_nse_history_df(raw)
+                if not df.empty:
+                    logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (pnsea).")
+                    return df
+            except Exception as exc:
+                logger.debug(f"[{symbol}] NSE-direct history fallback (pnsea) failed: {exc}")
+
+        nsepython_provider = next((p for p in self.providers if p.name == "nsepython"), None)
+        if getattr(nsepython_provider, "available", False):
+            try:
+                from nsepython import equity_history
+                raw = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        self.executor,
+                        lambda: equity_history(bare_symbol, "EQ", from_str, to_str),
+                    ),
+                    timeout=self.history_timeout_seconds * 2,  # chunks into 40-day windows internally, needs more time
+                )
+                df = self._normalize_nse_history_df(raw)
+                if not df.empty:
+                    logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (nsepython).")
+                    return df
+            except Exception as exc:
+                logger.debug(f"[{symbol}] NSE-direct history fallback (nsepython) failed: {exc}")
+
+        return pd.DataFrame()
+
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     async def fetch_history(self, symbol: str, period: str = "1y") -> pd.DataFrame:
