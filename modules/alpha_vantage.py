@@ -75,6 +75,10 @@ class AlphaVantageProvider:
 
     def _call_api(self, params):
         """Centralized API caller with rate-limit + budget management."""
+        if not API_KEY or API_KEY == "YOUR_API_KEY_HERE":
+            print("   Alpha Vantage API key missing. Skipping call.")
+            return None
+
         if not _check_budget():
             remaining = get_remaining_budget()
             print(f"    Alpha Vantage daily quota exhausted ({_DAILY_LIMIT} calls). {remaining} remaining.")

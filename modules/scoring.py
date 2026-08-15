@@ -566,7 +566,8 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     # 3 consecutive estimate downgrades
     try:
         from modules.estimates import get_estimate_data
-        _est_result = get_estimate_data(data.get("Symbol", ""))
+        disable_av = getattr(config, 'FULL_SCAN_DISABLE_ALPHA_VANTAGE', True)
+        _est_result = get_estimate_data(data.get("Symbol", ""), allow_alpha_vantage=not disable_av)
         _est_mom = _est_result.get("momentum", {})
         if _est_mom.get("is_disqualified"):
             score_ceiling = min(score_ceiling, 55)

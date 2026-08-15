@@ -24,6 +24,14 @@ sys.path.insert(0, str(ROOT))
 
 # Now import the module under test
 from modules.scoring import calculate_institutional_score, normalize_metric
+from unittest.mock import patch
+
+@pytest.fixture(autouse=True)
+def mock_external_apis():
+    """Mock external APIs so tests run instantly and offline."""
+    with patch('modules.estimates.get_estimate_data', return_value={}) as mock_est, \
+         patch('modules.promoter_intel.calculate_promoter_score', return_value={}) as mock_prom:
+        yield
 
 
 # ═══════════════════════════════════════════════════════════════════════════
