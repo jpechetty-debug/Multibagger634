@@ -1,5 +1,6 @@
 
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 candidates = ["ITDCEM.NS", "HBLPOWER.NS", "REC.NS", "TATAMOTORS.NS"]
 
@@ -11,7 +12,7 @@ delisted = []
 for sym in candidates:
     print(f"\nChecking {sym}...")
     try:
-        t = yf.Ticker(sym)
+        t = yf.Ticker(sym, session=get_yf_session())
         
         # 1. History
         hist = t.history(period="1mo")

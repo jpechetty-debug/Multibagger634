@@ -1,5 +1,6 @@
 import asyncio
 import yfinance as yf
+from modules.yf_session import get_yf_session
 import argparse
 import os
 from datetime import datetime
@@ -15,7 +16,7 @@ def format_market_cap(mcap: float):
 
 def generate_dynamic_report(ticker_symbol: str):
     try:
-        ticker = yf.Ticker(ticker_symbol)
+        ticker = yf.Ticker(ticker_symbol, session=get_yf_session())
         info = ticker.info
 
         full_name = info.get("longName") or info.get("shortName") or ticker_symbol.replace(".NS", "").title()

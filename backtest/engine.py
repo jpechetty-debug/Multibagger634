@@ -1,5 +1,6 @@
 import vectorbt as vbt
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 import pandas as pd
 import numpy as np
 
@@ -58,7 +59,7 @@ class VectorBTEngine:
 
             # Fetch historical data in one giant batch
             print(f"[VectorBT] Downloading data for {len(clean_symbols)} tickers...")
-            df = yf.download(clean_symbols, period=self.period, interval="1d", progress=False, group_by='ticker')
+            df = yf.download(clean_symbols, period=self.period, interval="1d", progress=False, group_by='ticker', session=get_yf_bulk_session())
             
             if df.empty:
                 return {s: {"symbol": s, "status": "NO_DATA"} for s in clean_symbols}

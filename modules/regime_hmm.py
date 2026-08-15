@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_session
 from hmmlearn.hmm import GaussianHMM
 from datetime import datetime, timedelta
 import joblib
@@ -27,7 +28,7 @@ class RegimeHMM:
     def fetch_index_data(self, ticker="^NSEI", years=5):
         """Fetches historical returns for an index."""
         start = (datetime.now() - timedelta(days=years*365)).strftime("%Y-%m-%d")
-        data = yf.download(ticker, start=start, progress=False)
+        data = yf.download(ticker, start=start, progress=False, session=get_yf_session())
         if data.empty:
             return pd.Series()
         
@@ -76,7 +77,7 @@ class RegimeHMM:
         
         # Fetch last 30 days to get current state
         start = (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d")
-        data = yf.download(ticker, start=start, progress=False)
+        data = yf.download(ticker, start=start, progress=False, session=get_yf_session())
         if data.empty:
             return "SIDEWAYS"
             

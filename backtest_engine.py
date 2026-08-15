@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import vectorbt as vbt
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 
 
 def _canonical_symbol(symbol: str) -> str:
@@ -74,6 +75,7 @@ def run_backtest():
             group_by="ticker",
             auto_adjust=False,
             threads=True,
+            session=get_yf_bulk_session(),
         )
     except Exception as e:
         print(f"Failed to fetch historical data: {e}")

@@ -1,8 +1,9 @@
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 def check_revisions(symbol):
     print(f"Checking Revisions for {symbol}...")
-    ticker = yf.Ticker(symbol)
+    ticker = yf.Ticker(symbol, session=get_yf_session())
     
     # 1. Recommendations (Target Price)
     try:

@@ -1,4 +1,5 @@
 import yfinance as yf
+from modules.yf_session import get_yf_session
 import pandas as pd
 from ticker_list import TICKERS
 
@@ -7,7 +8,7 @@ def get_microcap_data(ticker_symbol):
     Fetches data for Microcap 'Hidden Gem' Framework.
     """
     try:
-        ticker = yf.Ticker(ticker_symbol)
+        ticker = yf.Ticker(ticker_symbol, session=get_yf_session())
         info = ticker.info
         
         # --- 1. Market Cap Check ---

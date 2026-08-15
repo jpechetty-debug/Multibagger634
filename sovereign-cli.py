@@ -397,7 +397,8 @@ async def cmd_health(args):
     print("\nNetwork Connectivity (Optional):")
     try:
         import yfinance as yf
-        nifty = yf.Ticker("^NSEI")
+        from modules.yf_session import get_yf_session
+        nifty = yf.Ticker("^NSEI", session=get_yf_session())
         price = nifty.history(period="1d")["Close"].iloc[-1]
         print(f"  ✅ Nifty 50 Connectivity: OK (Current: {price:.2f})")
     except Exception as e:

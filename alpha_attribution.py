@@ -4,6 +4,7 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 
 from database import get_connection
 
@@ -142,6 +143,7 @@ def run_attribution():
                 progress=False,
                 auto_adjust=False,
                 threads=True,
+                session=get_yf_bulk_session(),
             )
             close_df = _extract_close_frame(data, tickers_list)
             if close_df.empty:

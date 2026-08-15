@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 from database import get_connection
 from modules.retry_utils import run_with_exponential_backoff
@@ -103,6 +104,7 @@ async def update_prices_background():
                                 progress=False,
                                 auto_adjust=True,
                                 timeout=15,
+                                session=get_yf_session(),
                             ),
                             context=f"yfinance background batch {i//BATCH_SIZE}",
                         )

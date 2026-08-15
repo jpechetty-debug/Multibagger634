@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import numpy as np
 import yfinance as yf
+from modules.yf_session import get_yf_session
 from datetime import datetime
 
 from api.dependencies import (
@@ -142,7 +143,7 @@ async def get_valuation(symbol: str, as_of_date: str | None = None):
         if cached:
             return _normalize_valuation_payload(cached)
 
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_session())
 
         info = await run_with_exponential_backoff(
             lambda: _run_blocking(lambda: ticker.info),
@@ -246,7 +247,7 @@ async def get_governance_data(symbol: str):
             symbol += ".NS"
             
         def _fetch_gov_data():
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(symbol, session=get_yf_session())
             info = ticker.info
             
             # Helper for safe extraction
@@ -396,7 +397,7 @@ async def get_revisions(symbol: str):
     """Fetch analyst recommendations trend and score impact."""
     try:
         symbol = normalize_symbol(symbol)
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_session())
         score_impact, sentiment = await _run_blocking(analyze_revisions, ticker)
         return {
             "symbol": symbol,

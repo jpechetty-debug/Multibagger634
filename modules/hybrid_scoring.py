@@ -50,10 +50,11 @@ def _sanitize_features(df: pd.DataFrame) -> pd.DataFrame:
 def _get_current_prices(symbols):
     """Fetch current prices to calculate forward returns from the PIT data."""
     import yfinance as yf
+    from modules.yf_session import get_yf_bulk_session
 
     try:
         tickers_str = " ".join(symbols)
-        data = yf.download(tickers_str, period="1d", progress=False)
+        data = yf.download(tickers_str, period="1d", progress=False, session=get_yf_bulk_session())
         if data.empty:
             return {}
         if "Close" in data:

@@ -1,5 +1,6 @@
 
 import yfinance as yf
+from modules.yf_session import get_yf_session
 from ticker_list import TICKERS
 import pandas as pd
 import time
@@ -9,7 +10,7 @@ import time
 def check_symbol(symbol):
     """Deep check for a single symbol."""
     try:
-        t = yf.Ticker(symbol)
+        t = yf.Ticker(symbol, session=get_yf_session())
         # 1. Try fetching history
         hist = t.history(period="5d")
         if not hist.empty:
@@ -38,7 +39,7 @@ def find_delisted():
         
         try:
             # Batch download first (fastest)
-            data = yf.download(chunk, period="5d", progress=False)
+            data = yf.download(chunk, period="5d", progress=False, session=get_yf_session())
             
             if data.empty:
                 # If entire batch fails, check individually

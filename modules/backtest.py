@@ -1,4 +1,5 @@
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 import pandas as pd
 import numpy as np
 from modules.recovery import calculate_recovery_metrics
@@ -30,10 +31,10 @@ def run_performance_analysis(tickers, weights=None, benchmark_symbol="^NSEI", pe
         
         if start_date and end_date:
             print(f"  📅 Range: {start_date} to {end_date}")
-            data = yf.download(all_symbols, start=start_date, end=end_date, progress=False)['Close']
+            data = yf.download(all_symbols, start=start_date, end=end_date, progress=False, session=get_yf_bulk_session())['Close']
         else:
             print(f"  📅 Period: {period}")
-            data = yf.download(all_symbols, period=period, progress=False)['Close']
+            data = yf.download(all_symbols, period=period, progress=False, session=get_yf_bulk_session())['Close']
         
         if data.empty:
             print("Failed to download backtest data.")

@@ -1,4 +1,5 @@
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 import pandas as pd
 
 def backtest_picks():
@@ -19,7 +20,7 @@ def backtest_picks():
     # Fetch Data (1 Year)
     print("Fetching historical data (1 Year)...")
     # auto_adjust=True is new default, so 'Adj Close' might not exist or be just 'Close'
-    data = yf.download(all_symbols, period="1y", progress=False, auto_adjust=False)["Adj Close"]
+    data = yf.download(all_symbols, period="1y", progress=False, auto_adjust=False, session=get_yf_bulk_session())["Adj Close"]
     
     if data.empty:
         print("No data fetched.")

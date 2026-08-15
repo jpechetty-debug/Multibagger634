@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 from modules.retry_utils import run_with_exponential_backoff
 
@@ -27,7 +28,7 @@ async def get_stock_news(symbol):
     Yahoo provides the articles, AV provides sentiment scoring.
     """
     try:
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_session())
 
         # Fetch Yahoo news and AV sentiment in parallel
         yahoo_task = run_with_exponential_backoff(

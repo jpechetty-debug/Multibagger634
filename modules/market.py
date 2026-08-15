@@ -1,11 +1,12 @@
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 def analyze_market_regime(symbol="^NSEI"):
     """
     Determines Market Regime: Bull, Bear, Correction, Sideways.
     """
     try:
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_session())
         hist = ticker.history(period="2y") # Need 200 DMA
         
         if len(hist) < 200:

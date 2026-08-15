@@ -1,4 +1,5 @@
 import yfinance as yf
+from modules.yf_session import get_yf_session
 import pandas as pd
 import datetime
 import logging
@@ -32,7 +33,7 @@ class MarketDataProvider:
             # Fetch Data
             # Note: yfinance might fail on some corporate firewalls or if ticker invalid.
             # We add a fallback just in case.
-            data = yf.download(self.vix_ticker, start=start_date, end=end_date, progress=False)
+            data = yf.download(self.vix_ticker, start=start_date, end=end_date, progress=False, session=get_yf_session())
             
             if data.empty:
                 print(f"⚠️ Warning: Could not fetch VIX data for {self.vix_ticker}. Using Fallback.")
@@ -120,7 +121,7 @@ class MarketDataProvider:
         
         try:
             # --- FACTOR 1: TREND (Nifty 50 vs 200DMA) ---
-            data = yf.download(index_ticker, period="1y", progress=False)
+            data = yf.download(index_ticker, period="1y", progress=False, session=get_yf_session())
             if not data.empty:
                 if isinstance(data.columns, pd.MultiIndex):
                     prices = data[('Close', index_ticker)]
@@ -249,7 +250,7 @@ class MarketDataProvider:
             tickers_str = " ".join(tickers)
             print(f"📥 Fetching history for {len(tickers)} stocks...")
             
-            data = yf.download(tickers_str, period=period, progress=False)
+            data = yf.download(tickers_str, period=period, progress=False, session=get_yf_session())
             
             if data.empty:
                 return pd.DataFrame()

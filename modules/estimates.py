@@ -375,7 +375,8 @@ def get_estimate_data(
             local_info = info
             if local_info is None:
                 import yfinance as yf
-                ticker = yf.Ticker(symbol)
+                from modules.yf_session import get_yf_session
+                ticker = yf.Ticker(symbol, session=get_yf_session())
                 local_info = ticker.info or {}
             own_est = compute_own_estimate(local_info)
             result["own_estimate"] = own_est

@@ -1,4 +1,5 @@
 import yfinance as yf
+from modules.yf_session import get_yf_session
 import pandas as pd
 from typing import Dict, List
 from .base import DataSource
@@ -19,7 +20,7 @@ class YFinanceSource(DataSource):
         # Let's keep this synchronous and let the Manager or Caller handle concurrency.
         
         try:
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(symbol, session=get_yf_session())
             return {
                 "info": ticker.info,
                 "financials": ticker.financials,
@@ -31,14 +32,14 @@ class YFinanceSource(DataSource):
 
     def fetch_history(self, symbol: str, period: str = "1y") -> pd.DataFrame:
         try:
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(symbol, session=get_yf_session())
             return ticker.history(period=period, auto_adjust=True)
         except Exception as e:
             raise Exception(f"YFinance history failed: {e}")
 
     def fetch_quarterly_results(self, symbol: str) -> List[Dict]:
         try:
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(symbol, session=get_yf_session())
             q_financials = ticker.quarterly_financials
             
             if q_financials.empty:

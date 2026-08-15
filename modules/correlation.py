@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 import os
 import json
 
@@ -25,7 +26,7 @@ def calculate_portfolio_correlation(limit=20, threshold=0.75):
         symbols = df_top['symbol'].tolist()
         
         # Fetch 6-month daily closing prices
-        data = yf.download(symbols, period="6mo", interval="1d", progress=False)
+        data = yf.download(symbols, period="6mo", interval="1d", progress=False, session=get_yf_bulk_session())
         
         if isinstance(data.columns, pd.MultiIndex):
             if "Close" in data:

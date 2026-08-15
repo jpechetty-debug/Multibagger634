@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import numpy as np
 import yfinance as yf
+from modules.yf_session import get_yf_session
 from jinja2 import Environment, FileSystemLoader
 
 from modules.quarterly_results import get_quarterly_timeline
@@ -43,7 +44,7 @@ async def generate_premium_html_report(symbol: str):
             return output_path
 
     print(f"Generating Premium Audit Report for {symbol}...")
-    ticker = yf.Ticker(symbol)
+    ticker = yf.Ticker(symbol, session=get_yf_session())
     
     # Gather data in parallel
     info_task = asyncio.to_thread(lambda: ticker.info)

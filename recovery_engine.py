@@ -3,6 +3,7 @@ import sys
 import sqlite3
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_bulk_session
 import numpy as np
 
 from database import get_connection
@@ -38,10 +39,10 @@ def run_recovery_analysis():
     
     try:
         # Fetch 2Y Data
-        data = yf.download(portfolio, period="2y", progress=False)['Close']
+        data = yf.download(portfolio, period="2y", progress=False, session=get_yf_bulk_session())['Close']
         
         # Benchmarks
-        nifty = yf.download("^NSEI", period="2y", progress=False)['Close']
+        nifty = yf.download("^NSEI", period="2y", progress=False, session=get_yf_bulk_session())['Close']
         
         # Create Portfolio Index (Equal Weight)
         # Normalize to 100 at start

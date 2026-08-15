@@ -5,6 +5,7 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 from database import get_connection
 
@@ -17,7 +18,7 @@ if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
 
 def _fetch_recent_volume_and_price(symbol: str) -> tuple:
     try:
-        hist = yf.Ticker(symbol).history(period="20d")
+        hist = yf.Ticker(symbol, session=get_yf_session()).history(period="20d")
         if hist is not None and not hist.empty and "Volume" in hist.columns and "Close" in hist.columns:
             avg_vol = float(pd.to_numeric(hist["Volume"], errors="coerce").dropna().mean())
             last_price_series = pd.to_numeric(hist["Close"], errors="coerce").dropna()
@@ -65,7 +66,7 @@ def run_liquidity_check():
     print("Fetching Volume and VIX Data...")
 
     try:
-        vix_data = yf.Ticker("^INDIAVIX").history(period="5d")
+        vix_data = yf.Ticker("^INDIAVIX", session=get_yf_session()).history(period="5d")
         current_vix = float(pd.to_numeric(vix_data["Close"], errors="coerce").dropna().iloc[-1])
     except Exception:
         current_vix = 20.0

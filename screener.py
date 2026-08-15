@@ -1,5 +1,6 @@
 
 import yfinance as yf  # Kept for Nifty benchmark index only (^NSEI)
+from modules.yf_session import get_yf_bulk_session
 import pandas as pd
 import numpy as np
 import json
@@ -496,7 +497,7 @@ def get_benchmark_return():
         return BENCHMARK_6M_RETURN
     
     try:
-        nifty = yf.Ticker("^NSEI")
+        nifty = yf.Ticker("^NSEI", session=get_yf_bulk_session())
         hist = nifty.history(period="1y") # Get 1y to be safe
         
         # --- MARKET CLOSED FIX (Dynamic) ---
@@ -553,7 +554,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
         if include_quarterly or _needs_info_backfill(info):
             try:
                 import yfinance as _yf
-                _t = _yf.Ticker(ticker_symbol)
+                _t = _yf.Ticker(ticker_symbol, session=get_yf_bulk_session())
                 if include_quarterly:
                     ticker.quarterly_financials = _t.quarterly_financials
                 else:
@@ -1029,12 +1030,12 @@ def analyze_market_regime(symbol="^NSEI"):
     Returns: (regime_string, vix_relative_limit)
     """
     try:
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_bulk_session())
         hist = ticker.history(period="2y") # Need 200 DMA
         
         # Also fetch VIX
         try:
-            vix_ticker = yf.Ticker("^INDIAVIX")
+            vix_ticker = yf.Ticker("^INDIAVIX", session=get_yf_bulk_session())
             vix_hist = vix_ticker.history(period="2y")
             vix_sma_200 = vix_hist['Close'].tail(200).mean()
             vix_std_200 = vix_hist['Close'].tail(200).std()

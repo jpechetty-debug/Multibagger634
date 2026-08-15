@@ -2,6 +2,7 @@ import asyncio
 
 import numpy as np
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 from modules.retry_utils import run_with_exponential_backoff
 
@@ -11,7 +12,7 @@ async def get_shareholding_pattern(symbol):
         if not symbol.endswith(".NS") and not symbol.endswith(".BO"):
             symbol += ".NS"
 
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=get_yf_session())
 
         holders = await run_with_exponential_backoff(
             lambda: asyncio.to_thread(lambda: ticker.major_holders),

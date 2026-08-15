@@ -159,7 +159,8 @@ def get_promoter_trend(symbol: str) -> Dict:
     # 2. Try to get pledge data from yfinance
     try:
         import yfinance as yf
-        ticker = yf.Ticker(symbol)
+        from modules.yf_session import get_yf_session
+        ticker = yf.Ticker(symbol, session=get_yf_session())
         info = ticker.info or {}
 
         # Some Indian stocks report pledge through majorHolders

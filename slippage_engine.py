@@ -3,6 +3,7 @@ import sys
 import sqlite3
 import pandas as pd
 import yfinance as yf
+from modules.yf_session import get_yf_session
 
 from database import get_connection
 
@@ -48,7 +49,7 @@ def run_slippage_analysis():
         caps = []
         for sym in portfolio['symbol']:
             try:
-                t = yf.Ticker(sym)
+                t = yf.Ticker(sym, session=get_yf_session())
                 info = t.info
                 mc = info.get('marketCap', 0) / 10000000 # Convert to Crores
                 caps.append(mc)
@@ -60,7 +61,7 @@ def run_slippage_analysis():
     # Fetch 1Y Gross Return
     print("⏳ Fetching Real-Time Returns...")
     tickers = portfolio['symbol'].tolist()
-    data = yf.download(tickers, period="1y", progress=False)['Close']
+    data = yf.download(tickers, period="1y", progress=False, session=get_yf_session())['Close']
     
     if isinstance(data, pd.Series):
         data = data.to_frame()
