@@ -383,7 +383,23 @@ class DataManager:
             NSEPythonProvider(self.executor),
             YFinanceProvider(self.executor)
         ]
-        
+        self._pnsea_provider = self.providers[0] if isinstance(self.providers[0], PNSEAProvider) else None
+
+        # Visibility: without this, a broken pnsea/nsepython install silently
+        # collapses the "priority fallback" architecture down to yfinance-only,
+        # which is exactly what was happening (source=yfinance for every symbol).
+        provider_status = ", ".join(
+            f"{p.name}={'OK' if getattr(p, 'available', False) else 'UNAVAILABLE'}"
+            for p in self.providers
+        )
+        logger.warning(f"DataManager providers: {provider_status}")
+        if not getattr(self._pnsea_provider, "available", False):
+            logger.warning(
+                "pnsea not available -> price history has NO fallback and is "
+                "fully dependent on yfinance. Run 'pip install pnsea' to enable "
+                "NSE-direct history as a backup when Yahoo rate-limits."
+            )
+
         # Persistent Cache (TTL: 24h for fundamentals, 1h for fast data)
         self.cache = PersistentCache()
         
@@ -479,41 +495,106 @@ class DataManager:
                 return incomplete_payload
             return {"symbol": symbol, "error": "All providers failed", "source": "fallback_failed"}
 
+    async def _fetch_history_nse_direct(self, symbol: str, period: str = "1y") -> pd.DataFrame:
+        """Price history straight from NSE via pnsea, bypassing yfinance/Yahoo
+        entirely. Used as a fallback when yfinance is rate-limited or empty,
+        so a Yahoo outage no longer means zero price history for the scan."""
+        if not getattr(self._pnsea_provider, "available", False):
+            return pd.DataFrame()
+        try:
+            loop = asyncio.get_running_loop()
+            days = 400  # default ~1y + buffer
+            try:
+                p = str(period).strip().lower()
+                if p.endswith("y"):
+                    days = int(float(p[:-1]) * 365) + 35
+                elif p.endswith("mo"):
+                    days = int(float(p[:-2]) * 30) + 15
+                elif p.endswith("d"):
+                    days = int(float(p[:-1])) + 10
+            except (ValueError, TypeError):
+                pass
+            to_date = datetime.now()
+            from_date = to_date - pd.Timedelta(days=days)
+            bare_symbol = symbol.replace(".NS", "").replace(".BO", "")
+            raw = await asyncio.wait_for(
+                loop.run_in_executor(
+                    self.executor,
+                    lambda: self._pnsea_provider.nse.equity.history(
+                        bare_symbol,
+                        from_date.strftime("%d-%m-%Y"),
+                        to_date.strftime("%d-%m-%Y"),
+                    ),
+                ),
+                timeout=self.history_timeout_seconds,
+            )
+            if raw is None or raw.empty:
+                return pd.DataFrame()
+
+            df = pd.DataFrame({
+                "Open": pd.to_numeric(raw.get("CH_OPENING_PRICE"), errors="coerce"),
+                "High": pd.to_numeric(raw.get("CH_TRADE_HIGH_PRICE"), errors="coerce"),
+                "Low": pd.to_numeric(raw.get("CH_TRADE_LOW_PRICE"), errors="coerce"),
+                "Close": pd.to_numeric(raw.get("CH_CLOSING_PRICE"), errors="coerce"),
+                "Volume": pd.to_numeric(raw.get("CH_TOT_TRADED_QTY"), errors="coerce"),
+            })
+            df.index = pd.to_datetime(raw.get("CH_TIMESTAMP"), errors="coerce")
+            df = df.dropna(subset=["Close"]).sort_index()
+            if not df.empty:
+                logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (pnsea).")
+            return df
+        except Exception as exc:
+            logger.debug(f"[{symbol}] NSE-direct history fallback failed: {exc}")
+            return pd.DataFrame()
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     async def fetch_history(self, symbol: str, period: str = "1y") -> pd.DataFrame:
         """Fetch historical price data with quality checks"""
         # Respect global cooldown to avoid hammering when rate-limited
         cooldown_remaining = self.provider_cooldown_until.get("yfinance", 0) - time.time()
         if cooldown_remaining > 0:
-            logger.warning(f"[{symbol}] yfinance in cooldown for {cooldown_remaining:.1f}s. Skipping history.")
-            raise ConnectionError("yfinance globally rate limited")
+            logger.warning(f"[{symbol}] yfinance in cooldown for {cooldown_remaining:.1f}s. Trying NSE-direct fallback.")
+            fallback_df = await self._fetch_history_nse_direct(symbol, period)
+            if not fallback_df.empty:
+                return fallback_df
+            raise ConnectionError("yfinance globally rate limited and NSE-direct fallback unavailable")
 
         async with self.semaphore:
             loop = asyncio.get_running_loop()
             ticker = yf.Ticker(symbol)
             df = pd.DataFrame()
+            yf_exc = None
             for attempt in range(2):
                 try:
                     df = await asyncio.wait_for(
                         loop.run_in_executor(self.executor, lambda: ticker.history(period=period)),
                         timeout=self.history_timeout_seconds,
                     )
+                    yf_exc = None
                 except Exception as exc:
+                    yf_exc = exc
                     transient = self._is_transient_error(exc)
                     self._record_provider_failure("yfinance", transient=transient)
                     if attempt == 0 and transient:
                         await asyncio.sleep(0.6)
                         continue
-                    raise
+                    break
                 self._record_provider_success("yfinance")
                 if df.empty or 'Close' not in df.columns:
                     if attempt == 0:
                         await asyncio.sleep(0.5)
                         continue
-                    return pd.DataFrame()
+                    break
                 break
-            
+
             if df.empty or 'Close' not in df.columns:
+                # yfinance exhausted its attempts (error or empty) - try NSE-direct
+                # before giving up, instead of returning empty straight away.
+                fallback_df = await self._fetch_history_nse_direct(symbol, period)
+                if not fallback_df.empty:
+                    return fallback_df
+                if yf_exc is not None:
+                    raise yf_exc
                 return pd.DataFrame()
                 
             # --- Data Quality Checks ---
