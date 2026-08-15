@@ -50,8 +50,8 @@ from typing import Optional
 
 from requests import Session
 from requests_cache import CacheMixin, SQLiteCache
-from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
-from pyrate_limiter import Duration, Limiter, RequestRate
+from requests_ratelimiter import LimiterMixin, InMemoryBucket
+from pyrate_limiter import Duration, Limiter, Rate
 
 # ── Interactive profile (env-overridable, same pattern as config.py) ────────
 # Default: max 2 requests per 5 seconds — conservative enough to stay well
@@ -101,9 +101,9 @@ def get_yf_session() -> CachedLimiterSession:
     if _session is None:
         _session = CachedLimiterSession(
             limiter=Limiter(
-                RequestRate(YF_RATE_LIMIT_REQUESTS, Duration.SECOND * YF_RATE_LIMIT_PERIOD_SECONDS)
+                Rate(YF_RATE_LIMIT_REQUESTS, int(Duration.SECOND * YF_RATE_LIMIT_PERIOD_SECONDS))
             ),
-            bucket_class=MemoryQueueBucket,
+            bucket_class=InMemoryBucket,
             backend=SQLiteCache(YF_CACHE_PATH, expire_after=YF_CACHE_EXPIRE_SECONDS),
         )
         _session.headers["User-agent"] = "multibagger634/1.0"
@@ -122,11 +122,11 @@ def get_yf_bulk_session() -> CachedLimiterSession:
     if _bulk_session is None:
         _bulk_session = CachedLimiterSession(
             limiter=Limiter(
-                RequestRate(
-                    YF_BULK_RATE_LIMIT_REQUESTS, Duration.SECOND * YF_BULK_RATE_LIMIT_PERIOD_SECONDS
+                Rate(
+                    YF_BULK_RATE_LIMIT_REQUESTS, int(Duration.SECOND * YF_BULK_RATE_LIMIT_PERIOD_SECONDS)
                 )
             ),
-            bucket_class=MemoryQueueBucket,
+            bucket_class=InMemoryBucket,
             backend=SQLiteCache(YF_CACHE_PATH, expire_after=YF_BULK_CACHE_EXPIRE_SECONDS),
         )
         _bulk_session.headers["User-agent"] = "multibagger634/1.0"
