@@ -321,8 +321,8 @@ class TestDisqualifiers:
     def test_very_low_fscore_caps_score(self, perfect_stock):
         low_f = {**perfect_stock, "F_Score": 1}
         result = calculate_institutional_score(low_f)
-        assert result["total_score"] <= 71, (
-            f"F-Score=1 should produce a ceiling ≤71, got {result['total_score']}"
+        assert result["total_score"] <= 76, (
+            f"F-Score=1 should produce a ceiling ≤76, got {result['total_score']}"
         )
 
     def test_declining_revenue_penalised(self, perfect_stock):

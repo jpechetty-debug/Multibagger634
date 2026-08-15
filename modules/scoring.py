@@ -375,21 +375,14 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
             total_bonus += 2
 
     # PHASE 43: ALPHA FACTOR TUNING (VALUE GEMS)
-    # 1. Deep Value + High Quality (Coal India Case)
-    if pe is not None and 0 < pe < 12 and data.get("Avg_ROE_5Y%", 0) > 25:
-        total_bonus += 7
-        
-    # 2. Statistically Cheapest Gem (PFC / REC Case)
-    if pe is not None and 0 < pe < 7 and data.get("Avg_ROE_5Y%", 0) > 15:
-        total_bonus += 7
-        
-    # 3. Utility Debt Shield (Power Grid Case)
-    sector = str(data.get("Sector") or "")
-    if "Utility" in sector or "Energy" in sector or "Power" in sector:
-        de_check = data.get("Debt_Equity")
-        fs_check = data.get("F_Score")
-        if (de_check is not None and de_check > 1.0) and (fs_check is not None and fs_check >= 6):
-            total_bonus += 5
+    # Generalized Deep Value + High Yield Spline
+    if pe is not None and 0 < pe < 15:
+        avg_roe = data.get("Avg_ROE_5Y%", 0)
+        if avg_roe > 15:
+            # Scale bonus up to +10 smoothly based on how cheap and how profitable
+            pe_bonus = max(0, min(5, (15 - pe) * 0.5))
+            roe_bonus = max(0, min(5, (avg_roe - 15) * 0.33))
+            total_bonus += (pe_bonus + roe_bonus)
 
     # --- APPLY CAPPED BONUS ---
     capped_bonus = min(total_bonus, MAX_BONUS)
@@ -450,9 +443,12 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     
     conviction = calculate_conviction_score(stock_data_for_conviction)
     
-    # 1. Add Institutional Boost to Base Score
+    # 1. Add Institutional Boost to Base Score (Smoothed Spline)
     if conviction['institutional_interest']:
-        base_score += 10 # Direct boost for super investor interest
+        # Base 2 points, plus 2 per investor, capped at 10 to avoid cliffs
+        investor_count = len(conviction.get('investors', []))
+        boost = min(10.0, 2.0 + (investor_count * 2.0))
+        base_score += boost
 
     # --- V3.1 & Phase 4: DISQUALIFIER RULES (Continuous Score Ceilings) ---
     score_ceiling = 100.0
@@ -487,14 +483,14 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     best_roe = roe_5y if roe_5y != 0 else roe_curr
     apply_spline_cap(best_roe, 15.0, 0.0, 60, "ROE Decay Spline")
     if best_roe < 0:
-        apply_spline_cap(best_roe, 0.0, -15.0, 40, "Value Destruction Spline")
+        apply_spline_cap(best_roe, 0.0, -15.0, 50, "Value Destruction Spline")
         
     # D2 & D11: Revenue Growth Spline (Good: >10%, Bad: <-5%, Cap: 60)
     sg_check = data.get("Sales_Growth_5Y%", 0) or data.get("Sales_Growth_TTM%", 0)
     if sg_check is not None:
         apply_spline_cap(sg_check, 10.0, -5.0, 60, "Growth Decay Spline")
         if sg_check < -5:
-            apply_spline_cap(sg_check, -5.0, -25.0, 40, "Declining Revenue Spline")
+            apply_spline_cap(sg_check, -5.0, -25.0, 50, "Declining Revenue Spline")
 
     # D3: Extreme ROE anomaly (data error)  ROE > 100% decaying aggressively
     if best_roe is not None and best_roe > 100:
@@ -510,7 +506,7 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
     if f_score_val is None: f_score_val = 0
     if f_score_val <= 4:
         # If F-Score is low, prevent high overall scores smoothly
-        score_ceiling = min(score_ceiling, 65 + (f_score_val * 5.9))
+        score_ceiling = min(score_ceiling, 70 + (f_score_val * 5.9))
         disqualifiers.append(f"Quality Floor Spline (F:{f_score_val})")
     
     # D6: Overvaluation Spline (Good gap: 0%, Bad gap: -70%, Cap: 65)
@@ -562,8 +558,9 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
         elif _prom_adj < 0:
             total_penalty += abs(_prom_adj)  # Promoter selling penalty
             factor_audit.append({"name": "Promoter Selling Penalty", "value": _prom_adj})
-    except Exception:
-        pass  # Graceful degradation: promoter intel is optional
+    except Exception as e:
+        import logging
+        logging.debug(f"Promoter intel failed for {data.get('Symbol', 'Unknown')}: {e}")
     
     # --- D16: ESTIMATE MOMENTUM DISQUALIFIER ---
     # 3 consecutive estimate downgrades
@@ -587,8 +584,9 @@ def calculate_institutional_score(data, sector_boost=0, market_regime="Neutral",
         elif _est_adj < 0:
             total_penalty += abs(_est_adj)  # Estimate downgrade penalty
             factor_audit.append({"name": "Estimate Downgrade Penalty", "value": _est_adj})
-    except Exception:
-        pass  # Graceful degradation: estimates are optional
+    except Exception as e:
+        import logging
+        logging.debug(f"Estimates failed for {data.get('Symbol', 'Unknown')}: {e}")
     
     # --- D7: 12-POINT INSTITUTIONAL QUALITY CHECKLIST ---
     # Combines Finology + Tickertape + Sovrenn methodology
