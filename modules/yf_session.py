@@ -87,47 +87,20 @@ _session: Optional[CachedLimiterSession] = None
 _bulk_session: Optional[CachedLimiterSession] = None
 
 
-def get_yf_session() -> CachedLimiterSession:
+def get_yf_session() -> Optional[CachedLimiterSession]:
     """
     Return the process-wide shared session for interactive/live-request
     yfinance calls (anything reachable from an API endpoint).
 
-    A single shared instance matters here: the rate limiter's request
-    budget lives on the session object itself, so constructing a new
-    session per call site would give every call site its own independent
-    budget and defeat the point of the limiter.
+    Note: yfinance > 1.0.0 uses curl_cffi and rejects custom requests.Session objects.
+    Returning None lets yfinance handle caching and sessions natively.
     """
-    global _session
-    if _session is None:
-        _session = CachedLimiterSession(
-            limiter=Limiter(
-                Rate(YF_RATE_LIMIT_REQUESTS, int(Duration.SECOND * YF_RATE_LIMIT_PERIOD_SECONDS))
-            ),
-            bucket_class=InMemoryBucket,
-            backend=SQLiteCache(YF_CACHE_PATH, expire_after=YF_CACHE_EXPIRE_SECONDS),
-        )
-        _session.headers["User-agent"] = "multibagger634/1.0"
-    return _session
+    return None
 
 
-def get_yf_bulk_session() -> CachedLimiterSession:
+def get_yf_bulk_session() -> Optional[CachedLimiterSession]:
     """
-    Return the process-wide shared session for bulk/batch pipelines
-    (screeners, backtests, correlation/alpha jobs) that walk hundreds of
-    symbols in one run. Higher throughput ceiling and longer cache life
-    than get_yf_session(), on an independent rate-limit budget so it never
-    competes with the interactive profile's budget.
+    Return the process-wide shared session for bulk/batch pipelines.
+    Returning None lets yfinance handle caching and sessions natively.
     """
-    global _bulk_session
-    if _bulk_session is None:
-        _bulk_session = CachedLimiterSession(
-            limiter=Limiter(
-                Rate(
-                    YF_BULK_RATE_LIMIT_REQUESTS, int(Duration.SECOND * YF_BULK_RATE_LIMIT_PERIOD_SECONDS)
-                )
-            ),
-            bucket_class=InMemoryBucket,
-            backend=SQLiteCache(YF_CACHE_PATH, expire_after=YF_BULK_CACHE_EXPIRE_SECONDS),
-        )
-        _bulk_session.headers["User-agent"] = "multibagger634/1.0"
-    return _bulk_session
+    return None
