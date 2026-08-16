@@ -342,7 +342,7 @@ def test_valuation_endpoint_uses_db_and_returns_metrics(tmp_path, monkeypatch):
                 "verdict": "UNDERVALUED",
             }
 
-    monkeypatch.setattr(main.yf, "Ticker", lambda _symbol: FakeTicker())
+    monkeypatch.setattr(main.yf, "Ticker", lambda _symbol, session=None: FakeTicker())
     monkeypatch.setattr(valuation_module, "ValuationEngine", FakeValuationEngine)
 
     with TestClient(main.app) as client:
@@ -416,7 +416,7 @@ def test_valuation_endpoint_cached_payload_shape(tmp_path, monkeypatch):
         def info(self):
             raise AssertionError("Should not hit yfinance when cached row exists")
 
-    monkeypatch.setattr(main.yf, "Ticker", lambda _symbol: ExplodingTicker())
+    monkeypatch.setattr(main.yf, "Ticker", lambda _symbol, session=None: ExplodingTicker())
 
     with TestClient(main.app) as client:
         response = client.get("/api/valuation/RELIANCE.NS")
@@ -463,6 +463,9 @@ def test_order_lifecycle_endpoints(tmp_path, monkeypatch):
     monkeypatch.setattr(api_dependencies_module, "risk_governor", fake_risk, raising=False)
     monkeypatch.setattr(trading_router_module, "risk_governor", fake_risk, raising=False)
 
+    monkeypatch.setenv("API_KEY", "test-api-key")
+    api_headers = {"x-api-key": "test-api-key"}
+
     with TestClient(main.app) as client:
         buy_response = client.post(
             "/api/order",
@@ -474,6 +477,7 @@ def test_order_lifecycle_endpoints(tmp_path, monkeypatch):
                 "score": 84.2,
                 "current_vix": 17.5,
             },
+            headers=api_headers,
         )
         open_positions = client.get("/api/trades/open")
         sell_response = client.post(
@@ -485,6 +489,7 @@ def test_order_lifecycle_endpoints(tmp_path, monkeypatch):
                 "price": 1050.0,
                 "reason": "TARGET",
             },
+            headers=api_headers,
         )
         trade_history = client.get("/api/trades/history")
 

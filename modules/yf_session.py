@@ -46,12 +46,10 @@ Usage:
     data = yf.download(symbol, period="1y", session=get_yf_session())
 """
 import os
+import time
 from typing import Optional
 
-from requests import Session
-from requests_cache import CacheMixin, SQLiteCache
-from requests_ratelimiter import LimiterMixin, InMemoryBucket
-from pyrate_limiter import Duration, Limiter, Rate
+from pyrate_limiter import Limiter, Rate
 
 # ── Interactive profile (env-overridable, same pattern as config.py) ────────
 # Default: max 2 requests per 5 seconds — conservative enough to stay well
@@ -77,30 +75,37 @@ YF_BULK_RATE_LIMIT_PERIOD_SECONDS = float(os.getenv("YF_BULK_RATE_LIMIT_PERIOD_S
 # the last one should mostly hit cache instead of re-downloading everything.
 YF_BULK_CACHE_EXPIRE_SECONDS = int(os.getenv("YF_BULK_CACHE_EXPIRE_SECONDS", "21600"))
 
+_LOG_WAIT_THRESHOLD_SECONDS = 0.5
 
-class CachedLimiterSession(CacheMixin, LimiterMixin, Session):
-    """requests.Session with local response caching + proactive rate-limiting."""
-    pass
+_interactive_rate = Rate(YF_RATE_LIMIT_REQUESTS, int(YF_RATE_LIMIT_PERIOD_SECONDS * 1000))
+_interactive_limiter = Limiter(_interactive_rate)
 
+_bulk_rate = Rate(YF_BULK_RATE_LIMIT_REQUESTS, int(YF_BULK_RATE_LIMIT_PERIOD_SECONDS * 1000))
+_bulk_limiter = Limiter(_bulk_rate)
 
-_session: Optional[CachedLimiterSession] = None
-_bulk_session: Optional[CachedLimiterSession] = None
+def _acquire(limiter: Limiter, bucket_name: str) -> None:
+    start = time.monotonic()
+    limiter.try_acquire(bucket_name)
+    waited = time.monotonic() - start
+    if waited > _LOG_WAIT_THRESHOLD_SECONDS:
+        print(f"[yf_session] throttled '{bucket_name}' for {waited:.2f}s to respect rate budget")
 
-
-def get_yf_session() -> Optional[CachedLimiterSession]:
+def get_yf_session() -> Optional[object]:
     """
     Return the process-wide shared session for interactive/live-request
     yfinance calls (anything reachable from an API endpoint).
 
-    Note: yfinance > 1.0.0 uses curl_cffi and rejects custom requests.Session objects.
-    Returning None lets yfinance handle caching and sessions natively.
+    Note: yfinance > 1.0.0 uses curl_cffi and bypasses requests.Session completely.
+    Caching is genuinely not recoverable at this layer, but we can still enforce
+    the rate budget directly as a blocking side effect before returning None.
     """
+    _acquire(_interactive_limiter, "yf_interactive")
     return None
 
-
-def get_yf_bulk_session() -> Optional[CachedLimiterSession]:
+def get_yf_bulk_session() -> Optional[object]:
     """
     Return the process-wide shared session for bulk/batch pipelines.
-    Returning None lets yfinance handle caching and sessions natively.
+    Returning None lets yfinance handle caching natively, but enforces our bulk rate limit first.
     """
+    _acquire(_bulk_limiter, "yf_bulk")
     return None

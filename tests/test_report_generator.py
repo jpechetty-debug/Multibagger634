@@ -58,7 +58,7 @@ def test_generate_analyst_report_returns_verified_cache(tmp_path, monkeypatch):
     )
 
     class ExplodingTicker:
-        def __init__(self, _symbol):
+        def __init__(self, _symbol, session=None):
             raise AssertionError("Cache hit should bypass yfinance fetch")
 
     monkeypatch.setattr(report_generator.yf, "Ticker", ExplodingTicker)
@@ -83,7 +83,7 @@ def test_generate_analyst_report_rebuilds_on_signature_mismatch(tmp_path, monkey
             return _build_info()
 
     monkeypatch.setattr(report_generator, "run_with_exponential_backoff", _passthrough_backoff)
-    monkeypatch.setattr(report_generator.yf, "Ticker", lambda _symbol: FakeTicker())
+    monkeypatch.setattr(report_generator.yf, "Ticker", lambda _symbol, session=None: FakeTicker())
 
     generated = asyncio.run(report_generator.generate_analyst_report(symbol))
 
