@@ -1,0 +1,12 @@
+.git
+__pycache__/
+*.pyc
+.venv/
+venv/
+web-ui/node_modules/
+web-ui/dist/
+web-ui/reports/
+.env
+*.db
+yfinance_cache/
+reports_cache/

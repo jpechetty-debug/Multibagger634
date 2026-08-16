@@ -161,7 +161,17 @@ async def update_prices_background():
 
         await asyncio.sleep(300)
 
-app.mount("/static", StaticFiles(directory="web-ui"), name="static")
+# Serves the built frontend (web-ui/dist, produced by `npm run build` — see
+# the Dockerfile's web-build stage for the production build). html=True
+# means a request to "/" automatically serves dist/index.html, and
+# /assets/... resolves to the built JS/CSS. The api routers registered
+# above still take priority for /api/* and /ws/* since they were added
+# first — this mount is intentionally the last route added. Note this does
+# NOT do SPA-style fallback for arbitrary deep paths (e.g. /some/route
+# 404s rather than serving index.html) — fine today since the UI uses
+# in-page tab state rather than client-side path routing; revisit if that
+# changes.
+app.mount("/", StaticFiles(directory="web-ui/dist", html=True), name="static")
 
 def health_ping_loop():
     """Lightweight background loop to keep connections alive."""
