@@ -4,198 +4,215 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sovereign Research Terminal</title>
-
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-is@18/umd/react-is.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { corePlugins: { preflight: false } };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
-
 <style>
 :root{
-  --bg0:#04060d;--bg1:#080c17;--bg2:#0c1120;--bg3:#111928;--bg4:#161f30;
-  --wire:rgba(255,255,255,0.055);--wire2:rgba(255,255,255,0.10);--wire3:rgba(255,255,255,0.18);
-  --t0:#ffffff;--t1:#c9d4f0;--t2:#6d7fa8;--t3:#3a445e;
-  --acid:#00ffa3;--acid-d:rgba(0,255,163,0.10);--acid-g:0 0 20px rgba(0,255,163,0.22);
-  --rose:#ff3060;--rose-d:rgba(255,48,96,0.10);
-  --gold:#ffb700;--gold-d:rgba(255,183,0,0.10);
-  --sky:#3d9eff;--sky-d:rgba(61,158,255,0.10);
+  /* void — cooler, deeper premium black */
+  --bg0:#030509;--bg1:#070911;--bg2:#0b0e18;--bg3:#10141f;--bg4:#171c2c;
+  --wire:rgba(255,255,255,0.05);--wire2:rgba(255,255,255,0.095);--wire3:rgba(255,255,255,0.17);
+  --t0:#f6f8fc;--t1:#b4bfda;--t2:#69749a;--t3:#3a4159;
+  --acid:#22e6a8;--acid-d:rgba(34,230,168,0.10);--acid-g:0 0 26px rgba(34,230,168,0.20);
+  --rose:#fb4a68;--rose-d:rgba(251,74,104,0.10);
+  --gold:#f6ba3f;--gold-d:rgba(246,186,63,0.10);
+  --sky:#5490ff;--sky-d:rgba(84,144,255,0.10);
   --mono:'Geist Mono',monospace;--sans:'Geist',sans-serif;--display:'Syne',sans-serif;
+  --rs:6px;--rm:10px;--rl:16px;--ease:cubic-bezier(.16,1,.3,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg0);color:var(--t1);font-family:var(--sans);font-size:13px}
+body{background:var(--bg0);color:var(--t1);font-family:var(--sans);font-size:13px;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent 0,transparent 1px,rgba(255,255,255,.010) 1px,rgba(255,255,255,.010) 2px);
-  background-size:100% 2px;opacity:.6}
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 1px,rgba(255,255,255,.009) 1px,rgba(255,255,255,.009) 2px);
+  background-size:100% 2px;opacity:.5}
 body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse 60% 30% at 5% 0%,rgba(0,255,163,.03) 0%,transparent 70%),
-             radial-gradient(ellipse 40% 40% at 95% 5%,rgba(61,158,255,.04) 0%,transparent 70%)}
-
+  background:radial-gradient(ellipse 55% 28% at 4% 0%,rgba(34,230,168,.035) 0%,transparent 70%),
+             radial-gradient(ellipse 38% 38% at 96% 4%,rgba(84,144,255,.045) 0%,transparent 70%)}
+::selection{background:var(--acid-d);color:var(--acid)}
+:focus-visible{outline:1.5px solid var(--acid);outline-offset:2px;border-radius:3px}
 /* LAYOUT */
 #root{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
-
 /* NAV */
-.nav{display:flex;align-items:center;padding:0 32px;height:50px;
-  background:rgba(4,6,13,.94);backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--wire);flex-shrink:0}
-.nav-brand{display:flex;align-items:center;gap:10px;padding-right:16px;margin-right:4px;border-right:1px solid var(--wire);flex-shrink:0}
-.nav-sigma{width:28px;height:28px;border-radius:7px;
-  background:conic-gradient(from 135deg,var(--acid),var(--sky),var(--acid));
+.nav{display:flex;align-items:center;padding:0 32px;height:52px;
+  background:rgba(3,5,9,.92);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--wire);flex-shrink:0;position:relative}
+.nav::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--wire3) 15%,var(--wire3) 85%,transparent)}
+.nav-brand{display:flex;align-items:center;gap:11px;padding-right:18px;margin-right:6px;border-right:1px solid var(--wire);flex-shrink:0}
+.nav-sigma{width:30px;height:30px;border-radius:9px;position:relative;
+  background:linear-gradient(155deg,var(--bg3),var(--bg1));
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--display);font-weight:800;font-size:13px;color:var(--bg0)}
-.nav-wordmark{font-family:var(--display);font-size:14px;font-weight:800;letter-spacing:2px;color:var(--t0)}
-.nav-sub{font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:1px;text-transform:uppercase}
-.nav-tabs{display:flex;gap:1px;flex:1;padding:0 12px;overflow:hidden}
-.nav-tab{padding:0 12px;height:50px;display:flex;align-items:center;font-family:var(--mono);font-size:10px;font-weight:500;
-  color:var(--t3);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
+  font-family:var(--display);font-weight:800;font-size:14px;color:var(--acid);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.nav-sigma::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+  background:conic-gradient(from 200deg,var(--acid),transparent 35%,var(--sky) 60%,transparent 88%,var(--acid));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85}
+.nav-wordmark{font-family:var(--display);font-size:14px;font-weight:800;letter-spacing:2.5px;color:var(--t0)}
+.nav-sub{font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase}
+.nav-tabs{display:flex;gap:2px;flex:1;padding:0 14px;overflow:hidden}
+.nav-tab{padding:0 13px;height:52px;display:flex;align-items:center;font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:.3px;color:var(--t3);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+  white-space:nowrap;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none}
 .nav-tab:hover{color:var(--t1);border-bottom-color:var(--wire2)}
 .nav-tab.active{color:var(--acid);border-bottom-color:var(--acid)}
-.nav-right{display:flex;align-items:center;gap:10px;padding-left:14px;border-left:1px solid var(--wire);flex-shrink:0}
-.vix-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--bg2);border:1px solid var(--wire);font-family:var(--mono);font-size:10px}
+.nav-right{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid var(--wire);flex-shrink:0}
+.vix-pill{display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:var(--bg2);border:1px solid var(--wire);font-family:var(--mono);font-size:10px}
 .vix-dot{width:5px;height:5px;border-radius:50%}
 .vix-dot.safe{background:var(--acid);box-shadow:0 0 6px var(--acid)}
 .vix-dot.warn{background:var(--gold);box-shadow:0 0 6px var(--gold)}
 .vix-dot.risk{background:var(--rose);box-shadow:0 0 6px var(--rose)}
-.regime-chip{font-family:var(--mono);font-size:9px;font-weight:600;padding:3px 9px;border-radius:4px}
-.regime-BULL{background:var(--acid-d);color:var(--acid)}
-.regime-BEAR{background:var(--rose-d);color:var(--rose)}
-.regime-SIDEWAYS,.regime-NEUTRAL{background:var(--gold-d);color:var(--gold)}
-.regime-VOLATILE{background:var(--rose-d);color:var(--rose)}
-
+.regime-chip{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.3px;padding:3px 10px;border-radius:var(--rs);border:1px solid transparent}
+.regime-BULL{background:var(--acid-d);color:var(--acid);border-color:rgba(34,230,168,.2)}
+.regime-BEAR{background:var(--rose-d);color:var(--rose);border-color:rgba(251,74,104,.2)}
+.regime-SIDEWAYS,.regime-NEUTRAL{background:var(--gold-d);color:var(--gold);border-color:rgba(246,186,63,.2)}
+.regime-VOLATILE{background:var(--rose-d);color:var(--rose);border-color:rgba(251,74,104,.2)}
 /* TICKER TAPE */
-.tape{height:28px;background:var(--bg1);border-bottom:1px solid var(--wire);display:flex;align-items:center;overflow:hidden;flex-shrink:0}
+.tape{height:28px;background:var(--bg1);border-bottom:1px solid var(--wire);display:flex;align-items:center;overflow:hidden;flex-shrink:0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
 .tape-inner{display:flex;animation:tape 60s linear infinite;white-space:nowrap}
 .tape-item{display:flex;align-items:center;gap:7px;padding:0 18px;border-right:1px solid var(--wire);font-family:var(--mono);font-size:9.5px}
-.t-sym{color:var(--t0);font-weight:600}.t-px{color:var(--t2)}.t-up{color:var(--acid)}.t-dn{color:var(--rose)}
+.t-sym{color:var(--t0);font-weight:600;letter-spacing:.2px}.t-px{color:var(--t2)}.t-up{color:var(--acid)}.t-dn{color:var(--rose)}
 @keyframes tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes flashGreen { 0% { background-color: rgba(16, 185, 129, 0); } 50% { background-color: rgba(16, 185, 129, 0.1); } 100% { background-color: rgba(16, 185, 129, 0); } }
-@keyframes flashRed { 0% { background-color: rgba(239, 68, 68, 0); } 50% { background-color: rgba(239, 68, 68, 0.1); } 100% { background-color: rgba(239, 68, 68, 0); } }
+@keyframes flashGreen { 0% { background-color: rgba(34,230,168,0); } 50% { background-color: rgba(34,230,168,.08); } 100% { background-color: rgba(34,230,168,0); } }
+@keyframes flashRed { 0% { background-color: rgba(251,74,104,0); } 50% { background-color: rgba(251,74,104,.08); } 100% { background-color: rgba(251,74,104,0); } }
 @keyframes heartPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.5; } }
-
-.glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+@media (prefers-reduced-motion: reduce){
+  .tape-inner{animation:none}
+  .loading-dot,.conn-dot.live,.heart-pulse{animation:none}
+  .trow{animation:none}
+}
+.glass { background: rgba(16, 20, 31, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
 .heart-pulse { animation: heartPulse 2s infinite ease-in-out; }
-.animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-
+.animate-fade-in { animation: fadeIn 0.5s var(--ease) forwards; }
 /* MAIN BODY */
 .body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:220px;border-right:1px solid var(--wire);background:var(--bg1);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
-.sb-section{padding:12px;border-bottom:1px solid var(--wire)}
-.sb-label{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--t3);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.sidebar{width:222px;border-right:1px solid var(--wire);background:var(--bg1);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.sb-section{padding:13px 14px;border-bottom:1px solid var(--wire)}
+.sb-label{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);display:flex;align-items:center;gap:6px;margin-bottom:9px}
 .sb-label::before{content:'';width:8px;height:1px;background:var(--acid)}
-.sb-stat{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.sb-stat{display:flex;justify-content:space-between;align-items:baseline;padding:4.5px 0;border-bottom:1px solid rgba(255,255,255,.03)}
 .sb-stat:last-child{border-bottom:none}
 .sb-key{font-family:var(--mono);font-size:9px;color:var(--t3)}
 .sb-val{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t1)}
 .sb-val.up{color:var(--acid)}.sb-val.dn{color:var(--rose)}.sb-val.warn{color:var(--gold)}
-.filter-row{display:flex;flex-direction:column;gap:3px}
-.filter-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--wire);background:transparent;color:var(--t2);
-  font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .12s;text-align:left}
+.filter-row{display:flex;flex-direction:column;gap:4px}
+.filter-btn{padding:7px 10px;border-radius:var(--rs);border:1px solid var(--wire);background:transparent;color:var(--t2);
+  font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;cursor:pointer;transition:all .14s var(--ease);text-align:left}
 .filter-btn:hover{background:var(--bg2);color:var(--t1);border-color:var(--wire2)}
-.filter-btn.active{background:var(--acid-d);color:var(--acid);border-color:rgba(0,255,163,.25)}
-
+.filter-btn.active{background:var(--acid-d);color:var(--acid);border-color:rgba(34,230,168,.28);box-shadow:inset 0 0 0 1px rgba(34,230,168,.06)}
 /* MAIN PANEL */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--wire);background:var(--bg1);flex-shrink:0}
+.toolbar{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--wire);background:var(--bg1);flex-shrink:0}
 .search{flex:1;position:relative}
-.search input{width:100%;background:var(--bg2);border:1px solid var(--wire);color:var(--t0);border-radius:8px;
-  font-family:var(--mono);font-size:11px;padding:7px 12px 7px 32px;outline:none;transition:all .2s}
+.search input{width:100%;background:var(--bg2);border:1px solid var(--wire);color:var(--t0);border-radius:var(--rm);
+  font-family:var(--mono);font-size:11px;padding:8px 12px 8px 32px;outline:none;transition:border-color .2s,box-shadow .2s}
 .search input::placeholder{color:var(--t3);font-size:10px}
 .search input:focus{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-d)}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3)}
-.scan-btn{padding:7px 16px;border-radius:20px;background:linear-gradient(135deg,var(--acid) 0%,#00cc85 100%);
-  color:var(--bg0);font-family:var(--mono);font-size:10px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.scan-btn{padding:8px 18px;border-radius:999px;background:linear-gradient(135deg,var(--acid) 0%,#0fc48a 100%);
+  color:#03150f;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.3px;border:none;cursor:pointer;transition:box-shadow .2s,transform .2s}
 .scan-btn:hover{box-shadow:var(--acid-g);transform:translateY(-1px)}
-.scan-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-
+.scan-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 /* SIGNAL TABLE */
 .table-wrap{flex:1;overflow-y:auto}
 .table-wrap::-webkit-scrollbar{width:4px}
 .table-wrap::-webkit-scrollbar-track{background:transparent}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
-.thead{display:grid;grid-template-columns:28px 1.6fr .9fr 60px .8fr 1fr 80px;
-  padding:7px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--wire);
-  font-family:var(--mono);font-size:8px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;position:sticky;top:0;z-index:10}
-.trow{display:grid;grid-template-columns:28px 1.6fr .9fr 60px .8fr 1fr 80px;
-  padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.022);align-items:center;
-  cursor:pointer;transition:background .1s;animation:rise .3s ease both}
-.trow:hover{background:rgba(255,255,255,.018)}
-.trow.sel{background:rgba(0,255,163,.05)}
+.thead{display:grid;grid-template-columns:28px 1.6fr .8fr 68px .8fr 1fr 80px;column-gap:16px;
+  padding:8px 16px;background:rgba(7,9,15,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--wire);
+  font-family:var(--mono);font-size:8px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;position:sticky;top:0;z-index:10}
+.trow{display:grid;grid-template-columns:28px 1.6fr .8fr 68px .8fr 1fr 80px;column-gap:16px;
+  padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.02);align-items:center;position:relative;
+  cursor:pointer;transition:background .12s;animation:rise .3s var(--ease) both}
+.trow:hover{background:rgba(255,255,255,.016)}
+.trow.sel{background:rgba(34,230,168,.055);box-shadow:inset 3px 0 0 var(--acid)}
 .r{text-align:right}.c{text-align:center}
 .rank-n{font-family:var(--mono);font-size:9px;color:var(--t3)}
 .sym-lg{font-family:var(--display);font-size:13px;font-weight:700;color:var(--t0);display:block;letter-spacing:.2px}
 .co-sm{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:1px;display:block}
 .px-cell{font-family:var(--mono);font-size:11px;color:var(--t1);text-align:right}
-.chg-up{font-family:var(--mono);font-size:10px;color:var(--acid);text-align:right}
-.chg-dn{font-family:var(--mono);font-size:10px;color:var(--rose);text-align:right}
-.sc-wrap{display:flex;align-items:center;gap:6px;justify-content:flex-end}
-.sc-bar{width:38px;height:2px;background:var(--bg0);border-radius:1px;overflow:hidden}
-.sc-fill{height:100%;border-radius:1px}
-.sc-num{font-family:var(--mono);font-size:10px;font-weight:600;min-width:20px;text-align:right}
-.badge{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.3px}
-.badge-BUY{background:var(--acid-d);color:var(--acid);border:1px solid rgba(0,255,163,.18)}
-.badge-WATCH{background:var(--sky-d);color:var(--sky);border:1px solid rgba(61,158,255,.18)}
+.chg-up{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--acid);text-align:right}
+.chg-dn{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--rose);text-align:right}
+.gauge-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto}
+.gauge-svg{position:absolute;top:0;left:0;transform:rotate(0deg)}
+.gauge-track{stroke:var(--wire2)}
+.gauge-fill{transition:stroke-dasharray .7s var(--ease);filter:drop-shadow(0 0 3px currentColor)}
+.gauge-num{position:relative;font-family:var(--mono);font-weight:700;letter-spacing:-.3px}
+.sc-num{font-family:var(--mono);font-size:10px;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:8px;font-weight:700;padding:3px 9px 3px 7px;
+  border-radius:999px;text-transform:uppercase;letter-spacing:.4px;line-height:1}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge-BUY{background:var(--acid-d);color:var(--acid);border:1px solid rgba(34,230,168,.22)}
+.badge-BUY::before{background:var(--acid);box-shadow:0 0 5px var(--acid)}
+.badge-WATCH{background:var(--sky-d);color:var(--sky);border:1px solid rgba(84,144,255,.22)}
+.badge-WATCH::before{background:var(--sky)}
 .badge-REJECT,.badge-DISQUALIFIED{background:var(--bg3);color:var(--t3);border:1px solid var(--wire)}
+.badge-REJECT::before,.badge-DISQUALIFIED::before{background:var(--t3)}
 .sect-cell{font-family:var(--mono);font-size:9px;color:var(--t2);text-align:right}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px}
 .empty-icon{font-size:32px;opacity:.3}
 .empty-txt{font-family:var(--mono);font-size:11px;color:var(--t3)}
-
 /* DETAIL DRAWER */
-.drawer{width:380px;border-left:1px solid var(--wire);background:var(--bg1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:width .2s}
+.drawer{width:380px;border-left:1px solid var(--wire);background:var(--bg1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:width .2s var(--ease)}
 .drawer.closed{width:0;border-left:none}
-.drawer-hdr{padding:14px 16px;border-bottom:1px solid var(--wire);flex-shrink:0}
-.drawer-sym{font-family:var(--display);font-size:22px;font-weight:800;color:var(--t0);letter-spacing:.3px}
+.drawer-hdr{padding:16px 16px 0;border-bottom:1px solid var(--wire);flex-shrink:0}
+.drawer-sym{font-family:var(--display);font-size:23px;font-weight:800;color:var(--t0);letter-spacing:.3px}
 .drawer-name{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:2px}
-.drawer-price{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--t0);margin-top:8px}
-.drawer-chg{font-family:var(--mono);font-size:11px;margin-left:8px}
-.drawer-body{flex:1;overflow-y:auto;padding:12px 16px}
+.drawer-price{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--t0);margin-top:10px}
+.drawer-chg{font-family:var(--mono);font-size:11px;font-weight:600;margin-left:8px}
+.drawer-body{flex:1;overflow-y:auto;padding:14px 16px}
 .drawer-body::-webkit-scrollbar{width:3px}
 .drawer-body::-webkit-scrollbar-thumb{background:var(--bg4)}
-.panel-card{background:var(--bg2);border:1px solid var(--wire);border-radius:10px;overflow:hidden;margin-bottom:10px}
-.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--wire)}
-.panel-title{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--t2);display:flex;align-items:center;gap:6px}
+.drawer-subtabs{scrollbar-width:none}
+.drawer-subtabs::-webkit-scrollbar{display:none}
+.panel-card{background:var(--bg2);border:1px solid var(--wire);border-radius:var(--rl);overflow:hidden;margin-bottom:11px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);transition:border-color .2s}
+.panel-card:hover{border-color:var(--wire2)}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-bottom:1px solid var(--wire)}
+.panel-title{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;color:var(--t2);display:flex;align-items:center;gap:6px}
 .panel-title::before{content:'';width:8px;height:1px;background:var(--acid)}
-.factor-row{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.03)}
+.factor-row{display:flex;align-items:center;gap:8px;padding:6.5px 13px;border-bottom:1px solid rgba(255,255,255,.03)}
 .factor-row:last-child{border-bottom:none}
 .factor-label{font-family:var(--mono);font-size:9px;color:var(--t2);width:90px;flex-shrink:0}
-.factor-bar-wrap{flex:1;height:3px;background:var(--bg0);border-radius:1px;overflow:hidden}
-.factor-bar{height:100%;border-radius:1px;background:var(--acid)}
+.factor-bar-wrap{flex:1;height:3px;background:var(--bg0);border-radius:2px;overflow:hidden}
+.factor-bar{height:100%;border-radius:2px;background:var(--acid);transition:width .5s var(--ease)}
 .factor-val{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--t1);width:28px;text-align:right}
-.kv-row{display:flex;justify-content:space-between;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:9px}
+.kv-row{display:flex;justify-content:space-between;padding:5.5px 13px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:9px}
 .kv-row:last-child{border-bottom:none}
-.kv-key{color:var(--t3)}.kv-val{color:var(--t1);font-weight:500}
+.kv-key{color:var(--t3);text-transform:capitalize}.kv-val{color:var(--t1);font-weight:500}
 .kv-val.up{color:var(--acid)}.kv-val.dn{color:var(--rose)}
-.regime-bar-wrap{padding:10px 12px}
+.regime-bar-wrap{padding:10px 13px}
 .regime-state{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
-.regime-desc{font-family:var(--mono);font-size:9px;color:var(--t3)}
-.close-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;transition:color .12s}
-.close-btn:hover{color:var(--t1)}
+.regime-desc{font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.5}
+.close-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:2px 5px;line-height:1;border-radius:var(--rs);transition:color .12s,background .12s}
+.close-btn:hover{color:var(--t1);background:var(--bg2)}
 .loading-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--acid);animation:pulse 1.4s ease-in-out infinite}
 .loading-dot:nth-child(2){animation-delay:.2s}.loading-dot:nth-child(3){animation-delay:.4s}
-.conn-status{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--t3)}
+.conn-status{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--t3)}
 .conn-dot{width:5px;height:5px;border-radius:50%}
 .conn-dot.live{background:var(--acid);animation:pulse 2s infinite}
 .conn-dot.dead{background:var(--rose)}
 </style>
-
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const {useState, useEffect, useCallback, useRef, useMemo} = React;
 const {BarChart,Bar,RadarChart,Radar,PolarGrid,PolarAngleAxis,
        LineChart,Line,XAxis,YAxis,Tooltip,ResponsiveContainer,ComposedChart,CartesianGrid,Legend,Area,AreaChart} = Recharts;
-
 const API = '';
-
 const IntegrityWidget = React.memo(({ latency, queue }) => (
     <div className="glass rounded-xl p-3 flex flex-col justify-between h-20 border border-white/5 bg-gradient-to-br from-slate-900 to-slate-800 mb-2">
         <div>
@@ -216,7 +233,6 @@ const IntegrityWidget = React.memo(({ latency, queue }) => (
         </div>
     </div>
 ));
-
 const StressDashboard = ({ engine }) => {
     const [metrics, setMetrics] = useState(engine?.metrics || {fps:60, eventsPerSec:0, avgLag:12, p99Lag:22, heapUsed:45});
     if (!engine?.active) return null;
@@ -244,13 +260,11 @@ const StressDashboard = ({ engine }) => {
         </div>
     );
 };
-
 const QuarterlyTimeline = ({ symbol }) => {
     const [data, setData]         = useState(null);
     const [loading, setLoading]   = useState(true);
     const [error, setError]       = useState(null);
     const [viewMode, setViewMode] = useState('revenue');
-
     useEffect(() => {
         if (!symbol) return;
         setLoading(true); setError(null);
@@ -259,11 +273,9 @@ const QuarterlyTimeline = ({ symbol }) => {
             .then(d => { setData(d); setLoading(false); })
             .catch(e => { setError(e.message); setLoading(false); });
     }, [symbol]);
-
     if (loading) return <div className="text-center py-10"><div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/></div>;
     if (error) return <div className="text-red-400 text-[10px] p-4 bg-red-400/10 rounded">Error: {error}</div>;
     if (!data || !data.quarters || data.quarters.length === 0) return <div className="text-slate-500 text-[10px] p-4 italic">No quarterly data available.</div>;
-
     return (
         <div className="animate-fade-in space-y-4">
             <div className="flex justify-between items-center">
@@ -313,7 +325,6 @@ const QuarterlyTimeline = ({ symbol }) => {
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>
-
             {/* Key Insights */}
             {data.trends && (
                 <div className="bg-slate-800/40 p-3 rounded-lg border border-slate-700/50">
@@ -343,7 +354,6 @@ const QuarterlyTimeline = ({ symbol }) => {
                     )}
                 </div>
             )}
-
             {/* Detailed Table */}
             <div className="overflow-x-auto border border-white/5 rounded-lg bg-slate-900/30">
                 <table className="w-full text-left text-[10px]">
@@ -378,18 +388,15 @@ const QuarterlyTimeline = ({ symbol }) => {
         </div>
     );
 };
-
 function fetchJSON(url, signal) {
   return fetch(API + url, signal ? {signal} : {}).then(r => {
     if (!r.ok) throw new Error(`${r.status}`);
     return r.json();
   });
 }
-
 const FILTERS = ['ALL','BUY','WATCH','MULTIBAGGER'];
 const REGIME_COLORS = {BULL:'var(--acid)',BEAR:'var(--rose)',SIDEWAYS:'var(--gold)',NEUTRAL:'var(--gold)',VOLATILE:'var(--rose)'};
 const SCORE_COLOR = s => s >= 75 ? 'var(--acid)' : s >= 55 ? 'var(--gold)' : 'var(--rose)';
-
 function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
   const vixClass = !vix ? 'warn' : vix >= 25 ? 'risk' : vix >= 18 ? 'warn' : 'safe';
   const tabs = ['Signals','Portfolio', 'Allocation', 'Backtest', 'Regime', 'Alerts'];
@@ -426,7 +433,6 @@ function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
     </nav>
   );
 }
-
 function TickerTape({stocks}) {
   if (!stocks.length) return null;
   const items = stocks.slice(0,20);
@@ -448,7 +454,6 @@ function TickerTape({stocks}) {
     </div>
   );
 }
-
 function Sidebar({filter, onFilter, regimeData, slippageData, metrics}) {
   return (
     <div className="sidebar">
@@ -508,17 +513,25 @@ function Sidebar({filter, onFilter, regimeData, slippageData, metrics}) {
     </div>
   );
 }
-
-function ScoreBar({score}) {
+function ScoreBar({score, size=30}) {
   const color = SCORE_COLOR(score);
+  const stroke = size < 38 ? 2.5 : 4;
+  const r = size / 2 - stroke * 1.6;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score || 0)) / 100;
+  const dash = c * pct;
   return (
-    <div className="sc-wrap">
-      <div className="sc-bar"><div className="sc-fill" style={{width:score+'%',background:color}}/></div>
-      <div className="sc-num" style={{color}}>{Math.round(score)}</div>
+    <div className="gauge-wrap" style={{width:size, height:size}}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="gauge-svg">
+        <circle cx={size/2} cy={size/2} r={r} className="gauge-track" strokeWidth={stroke} fill="none"/>
+        <circle cx={size/2} cy={size/2} r={r} stroke={color} strokeWidth={stroke} fill="none"
+          strokeDasharray={`${dash} ${c - dash}`} strokeLinecap="round"
+          transform={`rotate(-90 ${size/2} ${size/2})`} className="gauge-fill" style={{color}}/>
+      </svg>
+      <span className="gauge-num" style={{color, fontSize: size < 38 ? 9.5 : 13}}>{Math.round(score)}</span>
     </div>
   );
 }
-
 function SignalRow({stock, idx, selected, onClick}) {
   const sym = stock.Symbol || stock.symbol || '—';
   const name = stock.Name || stock.name || sym;
@@ -544,7 +557,6 @@ function SignalRow({stock, idx, selected, onClick}) {
     </div>
   );
 }
-
 function FactorRadar({data}) {
   if (!data || !data.length) return null;
   const COLORS = ['var(--acid)'];
@@ -560,7 +572,6 @@ function FactorRadar({data}) {
     </div>
   );
 }
-
 function Drawer({stock, onClose}) {
   const [activeSubTab, setActiveSubTab] = useState('Overview');
   const [report, setReport] = useState(null);
@@ -573,7 +584,6 @@ function Drawer({stock, onClose}) {
   const [swarm, setSwarm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [swarmLoading, setSwarmLoading] = useState(false);
-
   useEffect(() => {
     if (!stock) return;
     const sym = stock.Symbol || stock.symbol;
@@ -604,24 +614,18 @@ function Drawer({stock, onClose}) {
         setLoading(false);
       }
     };
-
     fetchAll();
     return ()=>ctrl.abort();
   }, [stock?.Symbol || stock?.symbol]);
-
   if (!stock) return <div className="drawer closed"/>;
-
   const sym = stock.Symbol || stock.symbol || '—';
   const name = stock.Name || stock.name || sym;
   const px = stock.Price || stock.price || 0;
   const chg = stock.Change_Pct || stock.change_pct || 0;
   const score = stock.Score || stock.score || 0;
-
   const factors = ['Quality','Growth','Valuation','Momentum','Ownership','Cycle','Risk']
     .map(f => ({factor: f, score: stock[f+'_Score'] || stock[f.toLowerCase()+'_score'] || Math.random()*20+60}));
-
   const subTabs = ['Overview', 'Technicals', 'Governance', 'Ownership', 'Financials', 'Swarm'];
-
   return (
     <div className="drawer">
       <div className="drawer-hdr">
@@ -632,29 +636,32 @@ function Drawer({stock, onClose}) {
           </div>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
-        <div style={{display:'flex',alignItems:'baseline',marginTop:8}}>
-          <span className="drawer-price">₹{px < 1000 ? px.toFixed(2) : px.toLocaleString('en-IN',{maximumFractionDigits:0})}</span>
-          <span className="drawer-chg" style={{color: chg >= 0 ? 'var(--acid)':'var(--rose)'}}>
-            {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
-          </span>
-          <ScoreBar score={score}/>
+        <div style={{display:'flex',alignItems:'center',marginTop:8}}>
+          <div>
+            <div style={{display:'flex',alignItems:'baseline'}}>
+              <span className="drawer-price">₹{px < 1000 ? px.toFixed(2) : px.toLocaleString('en-IN',{maximumFractionDigits:0})}</span>
+              <span className="drawer-chg" style={{color: chg >= 0 ? 'var(--acid)':'var(--rose)'}}>
+                {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
+              </span>
+            </div>
+            <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--t3)',textTransform:'uppercase',letterSpacing:1,marginTop:3}}>Composite Score</div>
+          </div>
+          <ScoreBar score={score} size={46}/>
         </div>
-        <div style={{display:'flex',gap:1,marginTop:16,borderBottom:'1px solid var(--wire)'}}>
+        <div className="drawer-subtabs" style={{display:'flex',gap:2,marginTop:16,borderBottom:'1px solid var(--wire)',overflowX:'auto'}}>
           {subTabs.map(t => (
             <button key={t} className={`nav-tab${activeSubTab===t?' active':''}`} 
-              style={{height:30,fontSize:8}}
+              style={{height:30,fontSize:8,padding:'0 10px',flexShrink:0}}
               onClick={()=>setActiveSubTab(t)}>{t}</button>
           ))}
         </div>
       </div>
-
       <div className="drawer-body">
         {loading && (
           <div style={{display:'flex',gap:4,justifyContent:'center',padding:'16px 0'}}>
             <div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/>
           </div>
         )}
-
         {activeSubTab === 'Overview' && (
           <>
             <div className="panel-card">
@@ -713,7 +720,6 @@ function Drawer({stock, onClose}) {
             )}
           </>
         )}
-
         {activeSubTab === 'Technicals' && technicals && (
           <div className="panel-card">
             <div className="panel-hdr"><span className="panel-title">Technical Indicators</span></div>
@@ -725,7 +731,6 @@ function Drawer({stock, onClose}) {
             ))}
           </div>
         )}
-
         {activeSubTab === 'Governance' && governance && (
           <div className="panel-card">
             <div className="panel-hdr"><span className="panel-title">Governance Audit</span></div>
@@ -754,7 +759,6 @@ function Drawer({stock, onClose}) {
             </div>
           </div>
         )}
-
         {activeSubTab === 'Ownership' && ownership && (
             <div className="panel-card">
                 <div className="panel-hdr"><span className="panel-title">Ownership Radar</span></div>
@@ -778,7 +782,6 @@ function Drawer({stock, onClose}) {
                 </div>
             </div>
         )}
-
         {activeSubTab === 'Financials' && (
             <div className="panel-card">
                 <div className="panel-hdr"><span className="panel-title">Performance Timeline</span></div>
@@ -787,7 +790,6 @@ function Drawer({stock, onClose}) {
                 </div>
             </div>
         )}
-
         {activeSubTab === 'Swarm' && (
             <div className="panel-card">
                 <div className="panel-hdr">
@@ -832,7 +834,6 @@ function Drawer({stock, onClose}) {
                 )}
             </div>
         )}
-
         <div style={{textAlign:'center',padding:'8px 0'}}>
           <a href={`/api/reports/html/${sym}`} target="_blank"
             style={{fontFamily:'var(--mono)',fontSize:'9px',color:'var(--acid)',textDecoration:'none'}}>
@@ -843,7 +844,6 @@ function Drawer({stock, onClose}) {
     </div>
   );
 }
-
 function App() {
   const [stocks, setStocks] = useState([]);
   const [regime, setRegime] = useState(null);
@@ -858,7 +858,6 @@ function App() {
   const [metrics, setMetrics] = useState({latency:14, queue:0, fps:60, eventsPerSec:124, avgLag:12, p99Lag:22, heapUsed:45});
   const [stressActive, setStressActive] = useState(false);
   const wsRef = useRef(null);
-
   useEffect(() => {
     const i = setInterval(() => {
       setMetrics(prev => ({
@@ -870,7 +869,6 @@ function App() {
     }, 2000);
     return () => clearInterval(i);
   }, []);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -881,18 +879,15 @@ function App() {
     } catch { setConnected(false); }
     finally { setLoading(false); }
   }, [filter]);
-
   const loadRegime = useCallback(async () => {
     try { const d = await fetchJSON('/api/regime_status'); setRegime(d); } catch {}
   }, []);
-
   const loadSlippage = useCallback(async () => {
     try { 
       const d = await fetchJSON('/api/slippage_stats'); 
       setSlippage(Array.isArray(d) ? d[0] : d); 
     } catch {}
   }, []);
-
   useEffect(() => {
     load();
     loadRegime();
@@ -904,7 +899,6 @@ function App() {
     ];
     return () => intervals.forEach(clearInterval);
   }, [load]);
-
   // WebSocket for live updates
   useEffect(() => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -931,7 +925,6 @@ function App() {
     } catch {}
     return () => wsRef.current?.close();
   }, []);
-
   const runScan = async () => {
     setScanning(true);
     try {
@@ -940,7 +933,6 @@ function App() {
     } catch {}
     finally { setScanning(false); }
   };
-
   const filtered = useMemo(() => {
     let s = stocks;
     if (filter === 'BUY') s = s.filter(x => (x.Action||x.action) === 'BUY');
@@ -951,10 +943,8 @@ function App() {
     }
     return s.sort((a,b) => (b.Score||b.score||0) - (a.Score||a.score||0));
   }, [stocks, filter, search]);
-
   const vix = regime?.vix;
   const regimeName = regime?.regime;
-
   return (
     <>
       <div onClick={() => setStressActive(!stressActive)} style={{position:'fixed', bottom:10, left:10, zIndex:100, cursor:'pointer', opacity:0.3}}>⚡</div>
@@ -1008,7 +998,6 @@ function App() {
               </div>
             </>
           )}
-
           {activeTab === 'Portfolio' && <PortfolioView/>}
           {activeTab === 'Allocation' && <AllocationView/>}
           {activeTab === 'Backtest' && <BacktestView/>}
@@ -1020,7 +1009,6 @@ function App() {
     </>
   );
 }
-
 function PortfolioView() {
   const [trades, setTrades] = useState([]);
   const [perf, setPerf] = useState(null);
@@ -1061,7 +1049,6 @@ function PortfolioView() {
     </div>
   );
 }
-
 function BacktestView() {
   const [metrics, setMetrics] = useState(null);
   useEffect(() => {
@@ -1083,7 +1070,6 @@ function BacktestView() {
     </div>
   );
 }
-
 function RegimeView({data}) {
   if (!data) return <div className="empty-txt">Regime data unavailable</div>;
   return (
@@ -1107,7 +1093,6 @@ function RegimeView({data}) {
     </div>
   );
 }
-
 function AlertsView() {
   const [rejections, setRejections] = useState([]);
   useEffect(() => {
@@ -1136,7 +1121,6 @@ function AlertsView() {
     </div>
   );
 }
-
 function AllocationView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1145,11 +1129,8 @@ function AllocationView() {
       .then(d => { setData(d); setLoading(false); })
       .catch(() => { setData({weights:{}}); setLoading(false); });
   }, []);
-
   if (loading) return <div className="empty"><div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/></div>;
-
   const weights = data?.weights ? Object.entries(data.weights) : [];
-
   return (
     <div style={{padding:30}}>
       <div className="sb-label" style={{marginBottom:30}}>Hierarchical Risk Parity (HRP) Allocation</div>
@@ -1184,11 +1165,7 @@ function AllocationView() {
     </div>
   );
 }
-
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
-</html>
-lementById('root')).render(<App/>);
-</script>
 </html>
