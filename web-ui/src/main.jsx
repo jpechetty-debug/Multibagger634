@@ -6,6 +6,7 @@ import {
   ComposedChart, CartesianGrid, Legend, Area, AreaChart
 } from 'recharts';
 import { marked } from 'marked';
+import { GenericWire } from './components/GenericWire';
 import './index.css';
 
 const API = '';
@@ -190,7 +191,7 @@ function fetchJSON(url, signal) {
     return r.json();
   });
 }
-const FILTERS = ['ALL','BUY','WATCH','MULTIBAGGER'];
+const FILTERS = ['ALL','BUY','WATCH','MULTIBAGGER','MICROCAPS','LIQUIDITY','RECOVERY'];
 const REGIME_COLORS = {BULL:'var(--acid)',BEAR:'var(--rose)',SIDEWAYS:'var(--gold)',NEUTRAL:'var(--gold)',VOLATILE:'var(--rose)'};
 const SCORE_COLOR = s => s >= 75 ? 'var(--acid)' : s >= 55 ? 'var(--gold)' : 'var(--rose)';
 function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
@@ -263,7 +264,10 @@ function Sidebar({filter, onFilter, regimeData, slippageData, metrics}) {
             <button key={f} className={`filter-btn${filter===f?' active':''}`} onClick={()=>onFilter(f)}>
               {f === 'ALL' ? '◈ All signals' :
                f === 'BUY' ? '▲ Buy rated' :
-               f === 'WATCH' ? '◎ Watch list' : '◉ Multibaggers'}
+               f === 'WATCH' ? '◎ Watch list' : 
+               f === 'MULTIBAGGER' ? '◉ Multibaggers' : 
+               f === 'MICROCAPS' ? '◒ Microcaps' : 
+               f === 'LIQUIDITY' ? '≎ Liquidity' : '⟲ Recovery'}
             </button>
           ))}
         </div>
@@ -421,7 +425,7 @@ function Drawer({stock, onClose}) {
   const score = stock.Score || stock.score || 0;
   const factors = ['Quality','Growth','Valuation','Momentum','Ownership','Cycle','Risk']
     .map(f => ({factor: f, score: stock[f+'_Score'] || stock[f.toLowerCase()+'_score'] || Math.random()*20+60}));
-  const subTabs = ['Overview', 'Technicals', 'Governance', 'Ownership', 'Financials', 'Swarm'];
+  const subTabs = ['Overview', 'Technicals', 'Governance', 'Ownership', 'Financials', 'Swarm', 'Deeper'];
   return (
     <div className="drawer">
       <div className="drawer-hdr">
@@ -630,6 +634,20 @@ function Drawer({stock, onClose}) {
                 )}
             </div>
         )}
+        {activeSubTab === 'Deeper' && (
+          <div style={{padding: '10px 0'}}>
+            <GenericWire endpoint={`/api/news/${sym}`} title="Recent News" />
+            <GenericWire endpoint={`/api/estimates/${sym}`} title="Estimates" />
+            <GenericWire endpoint={`/api/earnings/${sym}`} title="Earnings" />
+            <GenericWire endpoint={`/api/peers/${sym}`} title="Peers" />
+            <GenericWire endpoint={`/api/promoter/${sym}`} title="Promoters" />
+            <GenericWire endpoint={`/api/thesis/${sym}`} title="Thesis Status" />
+            <GenericWire endpoint={`/api/thesis_status/${sym}`} title="Thesis Updates" />
+            <GenericWire endpoint={`/api/history/${sym}`} title="Price History" />
+            <GenericWire endpoint={`/api/price-fundamentals/${sym}`} title="Price vs Fundamentals" />
+            <GenericWire endpoint="/api/order" title="Order Form" isPost={true} />
+          </div>
+        )}
         <div style={{textAlign:'center',padding:'8px 0'}}>
           <a href={`/api/reports/html/${sym}`} target="_blank"
             style={{fontFamily:'var(--mono)',fontSize:'9px',color:'var(--acid)',textDecoration:'none'}}>
@@ -668,7 +686,12 @@ function App() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = filter === 'MULTIBAGGER' ? '/api/multibagger-hunt' : '/api/stocks';
+      let endpoint = '/api/stocks';
+      if (filter === 'MULTIBAGGER') endpoint = '/api/multibagger-hunt';
+      else if (filter === 'MICROCAPS') endpoint = '/api/microcaps';
+      else if (filter === 'LIQUIDITY') endpoint = '/api/liquidity';
+      else if (filter === 'RECOVERY') endpoint = '/api/recovery';
+      
       const data = await fetchJSON(endpoint);
       setStocks(Array.isArray(data) ? data : []);
       setConnected(true);
@@ -799,6 +822,7 @@ function App() {
           {activeTab === 'Backtest' && <BacktestView/>}
           {activeTab === 'Regime' && <RegimeView data={regime}/>}
           {activeTab === 'Alerts' && <AlertsView/>}
+          {activeTab === 'Research' && <ResearchView/>}
         </div>
         <Drawer stock={selected} onClose={()=>setSelected(null)}/>
       </div>
@@ -842,6 +866,9 @@ function PortfolioView() {
           <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Avg Hold</span></div><div className="regime-state" style={{padding:15, fontSize:16}}>{perf.avg_hold}</div></div>
         </div>
       )}
+      <div style={{marginTop:30}}>
+        <GenericWire endpoint="/api/trades/history" title="Trade History" />
+      </div>
     </div>
   );
 }
@@ -1012,6 +1039,28 @@ function AllocationView() {
             <div className="px-cell r">₹{(w * 1000000).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function ResearchView() {
+  return (
+    <div style={{padding: 30}}>
+      <div className="sb-label" style={{marginBottom:30}}>Institutional Research Data</div>
+      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20}}>
+        <div>
+          <GenericWire endpoint="/api/research/factors" title="Research Factors" />
+          <GenericWire endpoint="/api/research/regimes" title="Research Regimes" />
+          <GenericWire endpoint="/api/research/alpha" title="Research Alpha" />
+          <GenericWire endpoint="/api/research/attribution" title="Research Attribution" />
+        </div>
+        <div>
+          <GenericWire endpoint="/api/av-budget" title="AV Budget" />
+          <GenericWire endpoint="/api/market_movers" title="Market Movers" />
+          <GenericWire endpoint="/api/market-calendar" title="Market Calendar" />
+          <GenericWire endpoint="/api/thesis_break" title="Thesis Break Rules" />
+        </div>
       </div>
     </div>
   );

@@ -84,7 +84,7 @@ def analyze_alpha_attribution(portfolio, universe):
 import pandas as pd
 
 def daily_factor_contribution(portfolio_returns: pd.Series, factor_exposures: pd.DataFrame, factor_returns: pd.DataFrame) -> pd.DataFrame:
-    "\""
+    """
     Phase 42: Alpha Attribution Engine.
     Decomposes daily portfolio returns into specific factor contributions.
     
@@ -96,7 +96,7 @@ def daily_factor_contribution(portfolio_returns: pd.Series, factor_exposures: pd
     Returns:
         DataFrame showing the daily return contribution attributed to each factor, 
         along with the unexplained (idiosyncratic) alpha.
-    "\""
+    """
     if factor_exposures.empty or factor_returns.empty:
         return pd.DataFrame()
         
