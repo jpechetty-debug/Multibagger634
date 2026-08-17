@@ -8,7 +8,16 @@ export default {
     preflight: false,
   },
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'brand-base': '#0B0F14',
+        'brand-card': '#111827',
+        'brand-border': '#1F2937',
+        'brand-accent': '#00E5FF',
+        'brand-positive': '#00FF88',
+        'brand-negative': '#FF4D4F',
+      }
+    },
   },
   plugins: [],
 };

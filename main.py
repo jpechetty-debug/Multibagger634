@@ -58,7 +58,7 @@ app.add_middleware(
 # ==========================================
 # ROUTER REGISTRATION
 # ==========================================
-from api.routers import market, analysis, trading, screener, fundamentals, technicals, system
+from api.routers import market, analysis, trading, screener, fundamentals, technicals, system, terminal
 
 app.include_router(market.router, tags=["Market"])
 app.include_router(analysis.router, tags=["Analysis"])
@@ -67,6 +67,7 @@ app.include_router(screener.router, tags=["Screener"])
 app.include_router(fundamentals.router, tags=["Fundamentals"])
 app.include_router(technicals.router, tags=["Technicals"])
 app.include_router(system.router, tags=["System"])
+app.include_router(terminal.router, tags=["Terminal"])
 
 # Override with a write-retry aware implementation.
 async def update_prices_background():

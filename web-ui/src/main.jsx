@@ -195,7 +195,7 @@ const REGIME_COLORS = {BULL:'var(--acid)',BEAR:'var(--rose)',SIDEWAYS:'var(--gol
 const SCORE_COLOR = s => s >= 75 ? 'var(--acid)' : s >= 55 ? 'var(--gold)' : 'var(--rose)';
 function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
   const vixClass = !vix ? 'warn' : vix >= 25 ? 'risk' : vix >= 18 ? 'warn' : 'safe';
-  const tabs = ['Signals','Portfolio', 'Allocation', 'Backtest', 'Regime', 'Alerts'];
+  const tabs = ['Overview', 'Market Intelligence', 'Opportunities', 'Elite Picks', 'Discovery', 'Research', 'Portfolio', 'Backtest', 'Settings'];
   return (
     <nav className="nav">
       <div className="nav-brand">
@@ -644,7 +644,7 @@ function App() {
   const [stocks, setStocks] = useState([]);
   const [regime, setRegime] = useState(null);
   const [slippage, setSlippage] = useState(null);
-  const [activeTab, setActiveTab] = useState('Signals');
+  const [activeTab, setActiveTab] = useState('Overview');
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
