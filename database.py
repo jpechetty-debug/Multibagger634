@@ -389,10 +389,34 @@ def load_fundamentals_universe_as_of(as_of_date=None):
     finally:
         conn.close()
 
+import os
+from sqlalchemy import create_engine
+
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
+if IS_SQLITE:
+    # Use QueuePool implicitly by providing pool_size
+    _engine = create_engine(
+        DATABASE_URL,
+        connect_args={'timeout': 5, 'check_same_thread': False},
+        pool_size=10,
+        max_overflow=20
+    )
+else:
+    _engine = create_engine(
+        DATABASE_URL,
+        pool_size=10,
+        max_overflow=20
+    )
+
 def get_connection():
-    conn = sqlite3.connect(DB_NAME, timeout=5, check_same_thread=False)
-    conn.execute(f"PRAGMA busy_timeout={DB_BUSY_TIMEOUT_MS}")
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn = _engine.raw_connection()
+    if IS_SQLITE:
+        cursor = conn.cursor()
+        cursor.execute(f"PRAGMA busy_timeout={DB_BUSY_TIMEOUT_MS}")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.close()
     return conn
 
 

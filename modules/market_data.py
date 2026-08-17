@@ -198,6 +198,34 @@ class MarketDataProvider:
             except Exception as hmm_err:
                 logger.warning("Market data: HMM factor error: %s", hmm_err)
             
+            # --- FACTOR 5: MACRO (US Yield Curve Inversion) ---
+            try:
+                # Fetch US 10Y (^TNX) and 13W (^IRX) yields as a global macro indicator
+                yield_data = yf.download(['^TNX', '^IRX'], period="5d", progress=False, session=get_yf_session())
+                if not yield_data.empty:
+                    if isinstance(yield_data.columns, pd.MultiIndex):
+                        tnx = yield_data[('Close', '^TNX')].iloc[-1]
+                        irx = yield_data[('Close', '^IRX')].iloc[-1]
+                    else:
+                        # Fallback if structure is flat for some reason
+                        tnx = yield_data['^TNX'].iloc[-1]
+                        irx = yield_data['^IRX'].iloc[-1]
+                        
+                    spread = tnx - irx
+                    details['yield_spread'] = spread
+                    
+                    if spread < -0.5: # Deep inversion
+                        votes['BEAR'] += 1
+                        details['macro_vote'] = 'BEAR'
+                    elif spread > 1.0: # Normal steep curve
+                        votes['BULL'] += 1
+                        details['macro_vote'] = 'BULL'
+                    else:
+                        votes['SIDEWAYS'] += 1
+                        details['macro_vote'] = 'SIDEWAYS'
+            except Exception as macro_err:
+                logger.warning("Market data: Macro factor error: %s", macro_err)
+            
             # --- CONSENSUS ---
             # Winner takes all
             winner = max(votes, key=votes.get)

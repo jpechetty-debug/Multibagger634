@@ -847,21 +847,76 @@ function PortfolioView() {
 }
 function BacktestView() {
   const [metrics, setMetrics] = useState(null);
+  const [curve, setCurve] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     fetchJSON('/api/backtest-metrics').then(setMetrics);
+    fetchJSON('/api/backtest/curve').then(d => setCurve(d.curve || []));
   }, []);
+
+  const runBacktest = async () => {
+    setLoading(true);
+    try {
+      await fetch('/api/run-backtest', { method: 'POST' });
+      // In a real app, we would poll for completion, here we just simulate delay
+      setTimeout(() => {
+        fetchJSON('/api/backtest-metrics').then(setMetrics);
+        fetchJSON('/api/backtest/curve').then(d => setCurve(d.curve || []));
+        setLoading(false);
+      }, 3000);
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{padding:30}}>
-      <div className="sb-label" style={{marginBottom:30}}>Institutional Backtest Analysis</div>
-      {metrics ? (
-        <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:24}}>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Average CAGR</span></div><div className="regime-state" style={{padding:20, color:'var(--acid)'}}>{metrics.cagr}%</div></div>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Max Drawdown</span></div><div className="regime-state" style={{padding:20, color:'var(--rose)'}}>{metrics.max_dd}%</div></div>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Win Rate</span></div><div className="regime-state" style={{padding:20, color:'var(--acid)'}}>{metrics.win_rate}%</div></div>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Sharpe Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.sharpe}</div></div>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Sortino Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.sortino}</div></div>
-          <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Calmar Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.calmar}</div></div>
-        </div>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:30}}>
+        <div className="sb-label" style={{marginBottom:0}}>Institutional Backtest Analysis</div>
+        <button className="scan-btn" onClick={runBacktest} disabled={loading}>
+          {loading ? '⟳ Running Backtest...' : '⚡ Run Backtest'}
+        </button>
+      </div>
+
+      {metrics && metrics.status !== 'pending' ? (
+        <>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:24, marginBottom: 30}}>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Average CAGR</span></div><div className="regime-state" style={{padding:20, color:'var(--acid)'}}>{metrics.cagr}%</div></div>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Max Drawdown</span></div><div className="regime-state" style={{padding:20, color:'var(--rose)'}}>{metrics.max_dd}%</div></div>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Win Rate</span></div><div className="regime-state" style={{padding:20, color:'var(--acid)'}}>{metrics.win_rate}%</div></div>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Sharpe Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.sharpe}</div></div>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Sortino Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.sortino}</div></div>
+            <div className="panel-card"><div className="panel-hdr"><span className="panel-title">Calmar Ratio</span></div><div className="regime-state" style={{padding:20}}>{metrics.calmar}</div></div>
+          </div>
+
+          {curve.length > 0 && (
+            <div className="panel-card" style={{padding:20}}>
+              <div className="panel-hdr mb-4"><span className="panel-title">Equity Curve (Simulated)</span></div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={curve} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--acid)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="var(--acid)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="date" hide />
+                    <YAxis domain={['auto', 'auto']} hide />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                      itemStyle={{ color: 'var(--acid)' }}
+                    />
+                    <Area type="monotone" dataKey="equity" stroke="var(--acid)" fillOpacity={1} fill="url(#colorEquity)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </>
       ) : <div className="empty-txt">No test results found. Execute a backtest to populate.</div>}
     </div>
   );

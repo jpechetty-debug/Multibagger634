@@ -4,7 +4,8 @@ import os
 import sqlite3
 import time
 from typing import Any, Callable
-from fastapi import WebSocket
+from fastapi import WebSocket, Security, HTTPException, status
+from fastapi.security import APIKeyHeader
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -13,9 +14,50 @@ from database import get_connection
 from modules.risk import RiskGovernor
 from modules.tracker import PortfolioTracker
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    expected_api_key = os.getenv("API_KEY")
+    if not expected_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Server API Key is not configured (fails closed).",
+        )
+    if api_key != expected_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key",
+        )
+    return api_key
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
+        self.redis_client = None
+        self.pubsub = None
+
+    async def init_redis(self):
+        try:
+            import redis.asyncio as redis
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            self.redis_client = redis.from_url(redis_url, decode_responses=True)
+            self.pubsub = self.redis_client.pubsub()
+            await self.pubsub.subscribe("price_updates")
+            asyncio.create_task(self._listen_to_redis())
+            print(f"[WebSocket] Connected to Redis PubSub at {redis_url}")
+        except Exception as e:
+            print(f"[WebSocket] Failed to connect to Redis PubSub: {e}")
+
+    async def _listen_to_redis(self):
+        try:
+            async for message in self.pubsub.listen():
+                if message["type"] == "message":
+                    data = json.loads(message["data"])
+                    await self.broadcast(data)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"[WebSocket] Redis PubSub listen error: {e}")
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()

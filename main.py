@@ -22,7 +22,7 @@ from api.dependencies import (
 
 socket.setdefaulttimeout(20.0)
 
-# Background Task for Periodic Price Updates
+# Background Tasks and Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Check API_KEY auth configuration
@@ -31,15 +31,16 @@ async def lifespan(app: FastAPI):
     else:
         print("[SECURITY] API_KEY authentication configured for protected endpoints.")
 
-    # Startup: Start background task
-    bg_task = asyncio.create_task(update_prices_background())
+    # Startup: Initialize Redis Pub/Sub for WebSockets
+    await manager.init_redis()
+    
     yield
-    # Shutdown: Stop background task
-    bg_task.cancel()
-    try:
-        await bg_task
-    except asyncio.CancelledError:
-        print("Background price updater stopped.")
+    
+    # Shutdown
+    if manager.pubsub:
+        await manager.pubsub.close()
+    if manager.redis_client:
+        await manager.redis_client.aclose()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -69,98 +70,7 @@ app.include_router(technicals.router, tags=["Technicals"])
 app.include_router(system.router, tags=["System"])
 app.include_router(terminal.router, tags=["Terminal"])
 
-# Override with a write-retry aware implementation.
-async def update_prices_background():
-    """Background loop to refresh stock prices in small batches to prevent deadlocks."""
-    await asyncio.sleep(10)
-    BATCH_SIZE = 50
-    while True:
-        try:
-            print(f"[{datetime.now()}] Initiating batched background price refresh...")
 
-            def _load_symbols():
-                conn = get_connection()
-                try:
-                    df_local = pd.read_sql("SELECT symbol FROM multibaggers", conn)
-                    return df_local["symbol"].tolist()
-                finally:
-                    conn.close()
-
-            all_symbols = await _run_blocking(_load_symbols)
-            
-            if all_symbols:
-                # Process in batches
-                for i in range(0, len(all_symbols), BATCH_SIZE):
-                    batch = all_symbols[i : i + BATCH_SIZE]
-                    print(f"  -> Processing batch {i//BATCH_SIZE + 1}/{(len(all_symbols) + BATCH_SIZE - 1)//BATCH_SIZE} ({len(batch)} symbols)")
-                    
-                    data = pd.DataFrame()
-                    try:
-                        data = await run_with_exponential_backoff(
-                            lambda: _run_ticker_blocking(
-                                yf.download,
-                                batch,
-                                period="1d",
-                                interval="1m",
-                                progress=False,
-                                auto_adjust=True,
-                                timeout=15,
-                                session=get_yf_session(),
-                            ),
-                            context=f"yfinance background batch {i//BATCH_SIZE}",
-                        )
-                    except Exception as e:
-                        print(f"    ⚠️ Batch Download Error: {e}")
-
-                    if not data.empty:
-                        def _write_batch_prices():
-                            conn = get_connection()
-                            try:
-                                cursor = conn.cursor()
-                                updated = 0
-                                for symbol in batch:
-                                    try:
-                                        if len(batch) > 1:
-                                            if "Close" in data and symbol in data["Close"].columns:
-                                                current_price = data["Close"][symbol].iloc[-1]
-                                            else:
-                                                continue
-                                        else:
-                                            # Case for single-ticker download (though batch is usually > 1)
-                                            current_price = data["Close"].iloc[-1]
-
-                                        if not pd.isna(current_price):
-                                            cursor.execute(
-                                                "UPDATE multibaggers SET price = ? WHERE symbol = ?",
-                                                (float(current_price), symbol),
-                                            )
-                                            updated += 1
-                                    except Exception:
-                                        pass
-                                conn.commit()
-                                return updated
-                            finally:
-                                conn.close()
-
-                        updated_count = await _run_sqlite_write_with_retry(
-                            _write_batch_prices, f"background batch {i//BATCH_SIZE}"
-                        )
-                        if updated_count > 0:
-                            try:
-                                symbols_str = ",".join([f"'{s}'" for s in batch])
-                                query = f"SELECT * FROM multibaggers WHERE symbol IN ({symbols_str})"
-                                updated_records = await _run_blocking(_read_records, query)
-                                await manager.broadcast({"type": "update", "data": _json_safe_clean(updated_records)})
-                            except Exception:
-                                pass
-                        # Small pause between batches to allow other API requests to breathe
-                        await asyncio.sleep(1)
-                
-                print(f"[{datetime.now()}] Full price update cycle completed.")
-        except Exception as e:
-            print(f"Error in price updater: {e}")
-
-        await asyncio.sleep(300)
 
 # Serves the built frontend (web-ui/dist, produced by `npm run build` — see
 # the Dockerfile's web-build stage for the production build). html=True

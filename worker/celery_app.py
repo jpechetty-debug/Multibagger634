@@ -59,6 +59,24 @@ app.conf.update(
             "args": (),
             "options": {"queue": "screening"},
         },
+        "retrain-xgboost-weekly": {
+            "task": "worker.tasks.retrain_xgboost",
+            "schedule": crontab(hour="2", minute="0", day_of_week="6"),
+            "args": (),
+            "options": {"queue": "compute"},
+        },
+        "pre-market-swarm-caching": {
+            "task": "worker.tasks.pre_market_swarm_caching",
+            "schedule": crontab(hour="8", minute="0", day_of_week="1-5"),
+            "args": (),
+            "options": {"queue": "compute"},
+        },
+        "update-prices-background": {
+            "task": "worker.tasks.update_prices_background_task",
+            "schedule": crontab(minute="*/5", day_of_week="1-5", hour="9-15"),
+            "args": (),
+            "options": {"queue": "compute"},
+        },
         "pit-retention-prune": {
             "task": "worker.tasks.prune_pit_data",
             "schedule": crontab(hour="2", minute="0"),
@@ -80,6 +98,7 @@ app.conf.update(
         "worker.tasks.generate_thesis": {"queue": "llm"},
         "worker.tasks.run_backtest_refresh": {"queue": "compute"},
         "worker.tasks.prune_pit_data": {"queue": "maintenance"},
+        "worker.tasks.update_prices_background_task": {"queue": "compute"},
     },
 )
 

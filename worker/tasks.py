@@ -173,6 +173,51 @@ def generate_thesis(stock_data: dict):
     except Exception as e:
         return {"symbol": stock_data.get("symbol", "UNKNOWN"), "error": str(e)}
 
+@app.task(name="worker.tasks.pre_market_swarm_caching", time_limit=3600)
+@celery_task_timer("pre_market_swarm_caching")
+def pre_market_swarm_caching():
+    """
+    Pre-Market Swarm Sentiment Analysis:
+    Fetch top 20 ranked stocks, grab their latest news, and trigger thesis generation.
+    """
+    try:
+        import asyncio
+        from database import get_connection
+        import pandas as pd
+        
+        conn = get_connection()
+        try:
+            # Get top 20 stocks by score
+            query = "SELECT symbol, price, score, sector, pe_ratio FROM multibaggers ORDER BY score DESC LIMIT 20"
+            df = pd.read_sql(query, conn)
+            top_stocks = df.to_dict(orient="records")
+        finally:
+            conn.close()
+
+        if not top_stocks:
+            return {"status": "no_stocks_found"}
+
+        from modules.news import get_stock_news
+        
+        print(f"[{datetime.now()}] Starting pre-market swarm caching for {len(top_stocks)} stocks...")
+        
+        for stock in top_stocks:
+            symbol = stock["symbol"]
+            print(f"  -> Fetching news for {symbol}...")
+            try:
+                news = asyncio.run(get_stock_news(symbol))
+                stock["news"] = news
+                
+                # Dispatch thesis generation task for caching
+                generate_thesis.delay(stock)
+            except Exception as e:
+                print(f"    ⚠️ Error caching {symbol}: {e}")
+                
+        return {"status": "success", "cached_count": len(top_stocks), "cached_at": datetime.now().isoformat()}
+    except Exception as e:
+        print(f"Error in pre-market swarm caching: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # BACKTEST TASKS
@@ -230,4 +275,92 @@ def run_stress_test(portfolio: dict):
             "tested_at": datetime.now().isoformat(),
         }
     except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.task(name="worker.tasks.update_prices_background_task", time_limit=1800)
+@celery_task_timer("update_prices_background_task")
+def update_prices_background_task():
+    try:
+        import pandas as pd
+        import yfinance as yf
+        import json
+        import redis
+        import time
+        from database import get_connection
+        from modules.yf_session import get_yf_session
+        from api.dependencies import _json_safe_clean
+        
+        BATCH_SIZE = 50
+        print(f"[{datetime.now()}] Initiating batched background price refresh via Celery...")
+
+        conn = get_connection()
+        try:
+            df_local = pd.read_sql("SELECT symbol FROM multibaggers", conn)
+            all_symbols = df_local["symbol"].tolist()
+        finally:
+            conn.close()
+
+        if all_symbols:
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            redis_client = redis.from_url(redis_url, decode_responses=True)
+            
+            for i in range(0, len(all_symbols), BATCH_SIZE):
+                batch = all_symbols[i : i + BATCH_SIZE]
+                print(f"  -> Processing batch {i//BATCH_SIZE + 1}/{(len(all_symbols) + BATCH_SIZE - 1)//BATCH_SIZE} ({len(batch)} symbols)")
+                
+                try:
+                    data = yf.download(
+                        batch,
+                        period="1d",
+                        interval="1m",
+                        progress=False,
+                        auto_adjust=True,
+                        timeout=15,
+                        session=get_yf_session()
+                    )
+                except Exception as e:
+                    print(f"    ⚠️ Batch Download Error: {e}")
+                    continue
+
+                if not data.empty:
+                    conn = get_connection()
+                    try:
+                        cursor = conn.cursor()
+                        updated = 0
+                        for symbol in batch:
+                            try:
+                                if len(batch) > 1:
+                                    if "Close" in data and symbol in data["Close"].columns:
+                                        current_price = data["Close"][symbol].iloc[-1]
+                                    else:
+                                        continue
+                                else:
+                                    current_price = data["Close"].iloc[-1]
+
+                                if not pd.isna(current_price):
+                                    cursor.execute(
+                                        "UPDATE multibaggers SET price = ? WHERE symbol = ?",
+                                        (float(current_price), symbol),
+                                    )
+                                    updated += 1
+                            except Exception:
+                                pass
+                        conn.commit()
+                        
+                        if updated > 0:
+                            symbols_str = ",".join([f"'{s}'" for s in batch])
+                            query = f"SELECT * FROM multibaggers WHERE symbol IN ({symbols_str})"
+                            df = pd.read_sql(query, conn)
+                            updated_records = json.loads(df.to_json(orient="records", double_precision=2))
+                            payload = {"type": "update", "data": _json_safe_clean(updated_records)}
+                            redis_client.publish("price_updates", json.dumps(payload))
+                    finally:
+                        conn.close()
+                
+                time.sleep(1)
+            
+            print(f"[{datetime.now()}] Full price update cycle completed.")
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error in background price updater: {e}")
         return {"status": "error", "message": str(e)}

@@ -1,15 +1,35 @@
 import React, { useEffect, useState } from 'react';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export default function Overview({ onSelectStock }) {
   const [data, setData] = useState(null);
   const [commandData, setCommandData] = useState(null);
   const [watchlist, setWatchlist] = useState([]);
 
+  const { messages } = useWebSocket('/ws/signals');
+
   useEffect(() => {
     fetch('/api/overview').then(r => r.json()).then(setData);
     fetch('/api/command_center').then(r => r.json()).then(setCommandData);
     fetch('/api/watchlist/events').then(r => r.json()).then(setWatchlist);
   }, []);
+
+  useEffect(() => {
+    // Process incoming WebSocket messages
+    if (messages.length > 0) {
+      const latestMsg = messages[messages.length - 1];
+      
+      // Update data based on message type
+      if (latestMsg.type === 'market_update' && data) {
+        // Assume latestMsg contains new overview data
+        setData((prev) => ({
+          ...prev,
+          // Update relevant fields
+          regime: latestMsg.data.regime || prev.regime,
+        }));
+      }
+    }
+  }, [messages]);
 
   if (!data || !commandData) return <div className="p-4 text-slate-400">Loading Terminal...</div>;
 

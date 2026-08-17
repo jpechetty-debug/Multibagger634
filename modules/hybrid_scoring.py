@@ -127,7 +127,13 @@ def train_hybrid_model():
     X = train_df[FEATURES]
     y = train_df["forward_return"]
 
-    # 3. Train XGBoost Regressor.
+    # 3. Train and Validate XGBoost Regressor.
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import r2_score
+    
+    # Split into train/test to validate before deployment
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
     model = xgb.XGBRegressor(
         n_estimators=100,
         learning_rate=0.05,
@@ -137,12 +143,19 @@ def train_hybrid_model():
     )
 
     print("Training XGBoost regressor on historical factor signatures...")
-    model.fit(X, y)
+    model.fit(X_train, y_train)
 
-    r2 = model.score(X, y)
-    print(f"Training complete. Meta-Model R2: {r2:.2f}")
+    y_pred = model.predict(X_test)
+    r2 = r2_score(y_test, y_pred)
+    print(f"Training complete. Out-of-sample R2: {r2:.2f}")
+
+    if r2 < 0:
+        print("Model failed validation (R2 < 0). Aborting replacement of active model.")
+        return False
 
     # 4. Save model.
+    # We fit on the entire dataset after validation passes
+    model.fit(X, y)
     joblib.dump(model, MODEL_PATH)
     print("Model saved to disk.")
     return True

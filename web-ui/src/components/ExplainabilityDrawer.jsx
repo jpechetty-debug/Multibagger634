@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ScoreChart from './ScoreChart';
 
 export default function ExplainabilityDrawer({ stock, onClose }) {
   const [data, setData] = useState(null);
@@ -78,13 +79,8 @@ export default function ExplainabilityDrawer({ stock, onClose }) {
             <div className="bg-white/5 px-3 py-2 border-b border-brand-border text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Score Evolution
             </div>
-            <div className="p-3 flex justify-between items-center text-sm font-mono text-slate-300">
-               {data.historical_evolution.map((s, i) => (
-                 <React.Fragment key={i}>
-                    <span className={i === data.historical_evolution.length - 1 ? 'text-brand-accent font-bold' : ''}>{s}</span>
-                    {i < data.historical_evolution.length - 1 && <span className="text-slate-600">→</span>}
-                 </React.Fragment>
-               ))}
+            <div className="p-3">
+               <ScoreChart data={data.historical_evolution} />
             </div>
           </div>
 

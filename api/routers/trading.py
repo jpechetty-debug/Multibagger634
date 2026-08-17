@@ -6,19 +6,10 @@ from datetime import datetime
 
 from api.dependencies import (
     portfolio_tracker, risk_governor,
-    regime_cache, _run_blocking, OrderRequest
+    regime_cache, _run_blocking, OrderRequest,
+    verify_api_key
 )
 from database import get_connection
-
-async def verify_api_key(x_api_key: str = Header(...)):
-    expected_key = os.getenv("API_KEY")
-    if not expected_key:
-        raise HTTPException(
-            status_code=500,
-            detail="Server authentication configuration error: API_KEY is not configured.",
-        )
-    if x_api_key != expected_key:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
 
 router = APIRouter()
 
