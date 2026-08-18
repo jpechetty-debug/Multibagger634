@@ -184,14 +184,14 @@ const SCORE_COLOR = s => s >= 75 ? 'var(--acid)' : s >= 55 ? 'var(--gold)' : 'va
 function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
   const tabs = ['Overview', 'Market Intelligence', 'Opportunities', 'Elite Picks', 'Discovery', 'Research', 'Regime', 'Alerts', 'Portfolio', 'Backtest', 'Settings'];
   return (
-    <nav className="h-14 flex items-center px-4 border-b border-brand-accent bg-brand-accent shadow-sm">
-      <div className="flex items-center pr-6 border-r border-slate-700 h-full">
-        <svg className="w-8 h-8 text-brand-positive mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <nav className="h-14 flex items-center px-4 border-b border-brand-cyan bg-brand-cyan shadow-sm">
+      <div className="flex items-center pr-6 border-r border-[#00c5cd] h-full">
+        <svg className="w-8 h-8 text-white mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4M4 12a8 8 0 0116 0v0" />
         </svg>
         <div className="flex flex-col">
           <div className="font-sans text-[16px] font-black tracking-wide text-white leading-none">SOVEREIGN</div>
-          <div className="font-sans text-[8px] font-bold tracking-widest text-slate-400 uppercase mt-0.5">Research Terminal</div>
+          <div className="font-sans text-[8px] font-bold tracking-widest text-white/80 uppercase mt-0.5">Research Terminal</div>
         </div>
       </div>
       
@@ -200,26 +200,26 @@ function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
           <button 
             key={t} 
             className={`h-full relative px-1 text-xs font-semibold whitespace-nowrap transition-colors bg-transparent border-none ${
-              activeTab === t ? 'text-brand-positive' : 'text-slate-300 hover:text-white'
+              activeTab === t ? 'text-[#00ff00]' : 'text-white/80 hover:text-white'
             }`} 
             onClick={() => onTabChange(t)}
           >
             {t}
             {activeTab === t && (
-              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-positive rounded-t-sm"></div>
+              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#00ff00] rounded-t-sm"></div>
             )}
           </button>
         ))}
       </div>
 
-      <div className="flex items-center pl-6 border-l border-slate-700 h-full gap-4">
-        <button className="text-slate-400 hover:text-white transition-colors bg-transparent border-none">
+      <div className="flex items-center pl-6 border-l border-[#00c5cd] h-full gap-4">
+        <button className="text-white/80 hover:text-white transition-colors bg-transparent border-none">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
         </button>
-        <button className="w-7 h-7 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 hover:text-white transition-colors border-none">
+        <button className="w-7 h-7 bg-brand-accent rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors border-none">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
           </svg>
@@ -233,18 +233,18 @@ function TickerTape({stocks}) {
   const items = stocks.slice(0,20);
   const doubled = [...items, ...items];
   return (
-    <div className="flex items-center h-8 bg-brand-accent border-b border-slate-700 text-[11px] font-mono overflow-hidden whitespace-nowrap text-white relative">
-      <div className="flex items-center justify-center w-8 h-full border-r border-slate-700 shrink-0 bg-brand-accent z-10 text-slate-400 absolute left-0 top-0">
+    <div className="flex items-center h-8 bg-brand-cyan border-b border-[#00c5cd] text-[11px] font-mono overflow-hidden whitespace-nowrap text-white relative">
+      <div className="flex items-center justify-center w-8 h-full border-r border-[#00c5cd] shrink-0 bg-brand-cyan z-10 text-white/80 absolute left-0 top-0">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
       </div>
       <div className="ticker-scroll flex items-center pl-8">
         {doubled.map((s, i) => {
           const chg = s.Change_Pct || s.change_pct || 0;
           return (
-            <div className="px-4 border-r border-slate-700 flex gap-2 items-center" key={i}>
-              <span className="font-bold text-slate-300">{s.Symbol || s.symbol}</span>
+            <div className="px-4 border-r border-[#00c5cd] flex gap-2 items-center" key={i}>
+              <span className="font-bold text-white/80">{s.Symbol || s.symbol}</span>
               <span className="text-white">₹{(s.Price || s.price || 0).toLocaleString('en-IN',{maximumFractionDigits:1})}</span>
-              <span className={`font-semibold ${chg >= 0 ? 'text-brand-positive' : 'text-brand-negative'}`}>{chg >= 0 ? '+' : ''}{chg.toFixed(1)}%</span>
+              <span className={`font-semibold ${chg >= 0 ? 'text-[#00ff00]' : 'text-brand-negative'}`}>{chg >= 0 ? '+' : ''}{chg.toFixed(1)}%</span>
             </div>
           );
         })}

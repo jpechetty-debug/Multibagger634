@@ -17,6 +17,7 @@ export default {
         'brand-on-accent': 'var(--on-primary)',
         'brand-positive': 'var(--secondary)',
         'brand-negative': 'var(--error)',
+        'brand-cyan': 'var(--tertiary-fixed-dim)',
         white: 'var(--on-surface)',
         black: 'var(--surface-container-lowest)',
         slate: {
