@@ -429,14 +429,14 @@ class DataManager:
         self.provider_fail_streak = self._shared_fail_streak
         self.provider_cooldown_until = self._shared_cooldown_until
         
-        # Priority Fallback List
+        # Priority Fallback List (yfinance as primary, others degrade gracefully)
         self.providers = [
             BhavcopyProvider(self.executor),
+            YFinanceProvider(self.executor),
             PNSEAProvider(self.executor),
-            NSEPythonProvider(self.executor),
-            YFinanceProvider(self.executor)
+            NSEPythonProvider(self.executor)
         ]
-        self._pnsea_provider = self.providers[0] if isinstance(self.providers[0], PNSEAProvider) else None
+        self._pnsea_provider = next((p for p in self.providers if isinstance(p, PNSEAProvider)), None)
 
         # Visibility: without this, a broken pnsea/nsepython install silently
         # collapses the "priority fallback" architecture down to yfinance-only,
@@ -445,12 +445,10 @@ class DataManager:
             f"{p.name}={'OK' if getattr(p, 'available', False) else 'UNAVAILABLE'}"
             for p in self.providers
         )
-        logger.warning(f"DataManager providers: {provider_status}")
+        logger.debug(f"DataManager providers: {provider_status}")
         if not getattr(self._pnsea_provider, "available", False):
-            logger.warning(
-                "pnsea not available -> price history has NO fallback and is "
-                "fully dependent on yfinance. Run 'pip install pnsea' to enable "
-                "NSE-direct history as a backup when Yahoo rate-limits."
+            logger.debug(
+                "pnsea not available -> price history fallback relying on yfinance."
             )
 
         # Persistent Cache (TTL: 24h for fundamentals, 1h for fast data)

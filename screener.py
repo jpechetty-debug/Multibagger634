@@ -534,7 +534,7 @@ async def get_stock_data(ticker_symbol, dm=None, allow_alpha_vantage=True, inclu
         debt_equity = 0
         eps_growth = 0
         
-        # --- Fetch data via DataManager (PNSEA -> nsepython -> yf fallback) ---
+        # --- Fetch data via DataManager (yfinance -> PNSEA -> nsepython fallback) ---
         _dm = dm if dm else data_manager
         raw = await _dm.async_fetch_fundamentals(ticker_symbol)
         if not isinstance(raw, dict):

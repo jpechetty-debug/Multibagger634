@@ -25,7 +25,7 @@ class IngestionService(BaseService):
     async def fetch_single_stock(self, symbol: str) -> Optional[StockDataPayload]:
         """Fetch and validate data for a single symbol using the fallback chain."""
         try:
-            # 1. Fetch raw fundamental data via DataManager (PNSEA -> NSEPython -> yf)
+            # 1. Fetch raw fundamental data via DataManager (yfinance -> PNSEA -> NSEPython)
             raw = await self.data_manager.async_fetch_fundamentals(symbol)
             if not raw or "error" in raw:
                 self.logger.warning(f"Fetch failed for {symbol}", symbol=symbol, source=raw.get("source", "none"))
