@@ -9,9 +9,10 @@ if str(ROOT) not in sys.path:
 import database
 
 @pytest.fixture(autouse=True)
-def setup_database_schema():
+def setup_database_schema(tmp_path):
     """Ensure the database schema is created before running any tests.
-    This prevents 'no such table' errors on a fresh checkout where 
-    database.init_db() hasn't been called by the screener yet.
+    Uses a temporary test database to avoid mutating the real stocks.db.
     """
+    test_db = tmp_path / "test_stocks.db"
+    database.set_db_path(str(test_db))
     database.init_db()

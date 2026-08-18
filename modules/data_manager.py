@@ -445,9 +445,9 @@ class DataManager:
             f"{p.name}={'OK' if getattr(p, 'available', False) else 'UNAVAILABLE'}"
             for p in self.providers
         )
-        logger.debug(f"DataManager providers: {provider_status}")
+        logger.warning(f"DataManager providers: {provider_status}")
         if not getattr(self._pnsea_provider, "available", False):
-            logger.debug(
+            logger.warning(
                 "pnsea not available -> price history fallback relying on yfinance."
             )
 
@@ -605,7 +605,7 @@ class DataManager:
                     logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (pnsea).")
                     return df
             except Exception as exc:
-                logger.debug(f"[{symbol}] NSE-direct history fallback (pnsea) failed: {exc}")
+                logger.warning(f"[{symbol}] NSE-direct history fallback (pnsea) failed: {exc}")
 
         nsepython_provider = next((p for p in self.providers if p.name == "nsepython"), None)
         if getattr(nsepython_provider, "available", False):
@@ -623,7 +623,7 @@ class DataManager:
                     logger.info(f"[{symbol}] Recovered {len(df)} price bars via NSE-direct fallback (nsepython).")
                     return df
             except Exception as exc:
-                logger.debug(f"[{symbol}] NSE-direct history fallback (nsepython) failed: {exc}")
+                logger.warning(f"[{symbol}] NSE-direct history fallback (nsepython) failed: {exc}")
 
         return pd.DataFrame()
 
