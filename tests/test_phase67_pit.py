@@ -44,7 +44,7 @@ def _sample_universe():
 
 def test_save_multibaggers_writes_pit_snapshot(tmp_path, monkeypatch):
     db_path = tmp_path / "phase67.db"
-    monkeypatch.setattr(database, "DB_NAME", str(db_path), raising=False)
+    database.set_db_path(str(db_path))
 
     database.init_db()
     database.save_multibaggers(_sample_universe())
@@ -74,7 +74,7 @@ def test_save_multibaggers_writes_pit_snapshot(tmp_path, monkeypatch):
 
 def test_load_fundamentals_universe_as_of_returns_latest_snapshot(tmp_path, monkeypatch):
     db_path = tmp_path / "phase67_lookup.db"
-    monkeypatch.setattr(database, "DB_NAME", str(db_path), raising=False)
+    database.set_db_path(str(db_path))
 
     database.init_db()
     conn = database.get_connection()
@@ -106,7 +106,7 @@ def test_load_fundamentals_universe_as_of_returns_latest_snapshot(tmp_path, monk
 
 def test_pit_retention_prunes_old_snapshots(tmp_path, monkeypatch):
     db_path = tmp_path / "phase67_retention.db"
-    monkeypatch.setattr(database, "DB_NAME", str(db_path), raising=False)
+    database.set_db_path(str(db_path))
 
     database.init_db()
     conn = database.get_connection()

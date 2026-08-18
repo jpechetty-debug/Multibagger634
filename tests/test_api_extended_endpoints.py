@@ -314,7 +314,7 @@ def test_valuation_endpoint_uses_db_and_returns_metrics(tmp_path, monkeypatch):
     conn.close()
 
     monkeypatch.setattr(main, "DB_PATH", str(db_path), raising=False)
-    monkeypatch.setattr(database_module, "DB_NAME", str(db_path), raising=False)
+    database_module.set_db_path(str(db_path))
 
     class FakeTicker:
         @property
@@ -409,7 +409,7 @@ def test_valuation_endpoint_cached_payload_shape(tmp_path, monkeypatch):
     conn.close()
 
     monkeypatch.setattr(main, "DB_PATH", str(db_path), raising=False)
-    monkeypatch.setattr(database_module, "DB_NAME", str(db_path), raising=False)
+    database_module.set_db_path(str(db_path))
 
     class ExplodingTicker:
         @property

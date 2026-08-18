@@ -394,21 +394,37 @@ from sqlalchemy import create_engine
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
+_engine = None
 
-if IS_SQLITE:
-    # Use QueuePool implicitly by providing pool_size
-    _engine = create_engine(
-        DATABASE_URL,
-        connect_args={'timeout': 5, 'check_same_thread': False},
-        pool_size=10,
-        max_overflow=20
-    )
-else:
-    _engine = create_engine(
-        DATABASE_URL,
-        pool_size=10,
-        max_overflow=20
-    )
+def _build_engine():
+    global _engine, DATABASE_URL, IS_SQLITE, DB_NAME
+    if IS_SQLITE:
+        # Use QueuePool implicitly by providing pool_size
+        _engine = create_engine(
+            DATABASE_URL,
+            connect_args={'timeout': 5, 'check_same_thread': False},
+            pool_size=10,
+            max_overflow=20
+        )
+    else:
+        _engine = create_engine(
+            DATABASE_URL,
+            pool_size=10,
+            max_overflow=20
+        )
+
+_build_engine()
+
+def set_db_path(path: str):
+    """
+    Helper for test isolation: rebuilds DATABASE_URL and the SQLAlchemy engine
+    to point to a different file.
+    """
+    global DB_NAME, DATABASE_URL, IS_SQLITE
+    DB_NAME = str(path)
+    DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_NAME}")
+    IS_SQLITE = DATABASE_URL.startswith("sqlite")
+    _build_engine()
 
 def get_connection():
     conn = _engine.raw_connection()

@@ -396,13 +396,23 @@ async def cmd_health(args):
     # 5. Connectivity Check (Optional/Short)
     print("\nNetwork Connectivity (Optional):")
     try:
+        import requests
+        resp = requests.get("https://query2.finance.yahoo.com/v1/finance/search?q=^NSEI", timeout=5)
+        resp.raise_for_status()
+        
         import yfinance as yf
         from modules.yf_session import get_yf_session
         nifty = yf.Ticker("^NSEI", session=get_yf_session())
-        price = nifty.history(period="1d")["Close"].iloc[-1]
-        print(f"  ✅ Nifty 50 Connectivity: OK (Current: {price:.2f})")
+        hist = nifty.history(period="1d")
+        if hist is None or hist.empty:
+            print("  ⚠️  NSE Connectivity: Failed (Empty response from Yahoo Finance)")
+        else:
+            price = hist["Close"].iloc[-1]
+            print(f"  ✅ Nifty 50 Connectivity: OK (Current: {price:.2f})")
+    except requests.exceptions.RequestException as e:
+        print(f"  ⚠️  NSE Connectivity: Network unreachable or HTTP error ({e})")
     except Exception as e:
-        print(f"  ⚠️  NSE Connectivity: Failed ({e})")
+        print(f"  ⚠️  NSE Connectivity: Failed ({type(e).__name__}: {e})")
 
 def main():
     parser = argparse.ArgumentParser(description="Sovereign AI Trading Engine CLI")

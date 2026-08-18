@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     if manager.pubsub:
-        await manager.pubsub.close()
+        await manager.pubsub.aclose()
     if manager.redis_client:
         await manager.redis_client.aclose()
 
