@@ -14,6 +14,7 @@ export default {
         'brand-card': 'var(--surface-container-lowest)',
         'brand-border': 'var(--wire)',
         'brand-accent': 'var(--primary)',
+        'brand-on-accent': 'var(--on-primary)',
         'brand-positive': 'var(--secondary)',
         'brand-negative': 'var(--error)',
         white: 'var(--on-surface)',
