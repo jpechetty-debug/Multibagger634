@@ -20,19 +20,19 @@ export default function ScoreChart({ data }) {
     <div className="w-full h-32">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--wire)" vertical={false} />
           <XAxis dataKey="index" hide />
-          <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(val) => Math.round(val)} />
+          <YAxis stroke="var(--outline)" fontSize={10} tickFormatter={(val) => Math.round(val)} />
           <Tooltip
-            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', fontSize: '12px' }}
-            itemStyle={{ color: '#38bdf8' }}
+            contentStyle={{ backgroundColor: 'var(--surface-container-low)', borderColor: 'var(--wire)', fontSize: '12px', borderRadius: '6px' }}
+            itemStyle={{ color: 'var(--primary)' }}
           />
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#38bdf8"
+            stroke="var(--primary)"
             strokeWidth={2}
-            dot={{ r: 3, fill: '#38bdf8', strokeWidth: 0 }}
+            dot={{ r: 3, fill: 'var(--primary)', strokeWidth: 0 }}
             activeDot={{ r: 5 }}
           />
         </LineChart>

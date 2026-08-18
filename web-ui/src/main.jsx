@@ -16,31 +16,12 @@ import { useWebSocket } from './hooks/useWebSocket';
 import './index.css';
 
 const API = '';
-const IntegrityWidget = React.memo(({ latency, queue }) => (
-    <div className="glass rounded-xl p-3 flex flex-col justify-between h-20 border border-white/5 bg-gradient-to-br from-slate-900 to-slate-800 mb-2">
-        <div>
-            <div className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-1">Neural Heartbeat</div>
-            <div className="flex items-baseline gap-1">
-                <span className={`text-lg font-black font-mono ${latency < 20 ? 'text-emerald-400' : 'text-amber-400'}`}>{latency}</span>
-                <span className="text-[8px] text-slate-500 font-bold">ms</span>
-            </div>
-        </div>
-        <div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mb-1">
-                <div className="h-full bg-emerald-500 animate-pulse" style={{ width: '100%' }}></div>
-            </div>
-            <div className="flex justify-between items-center">
-                <span className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Queue Depth</span>
-                <span className="text-[8px] text-white font-mono font-bold">{queue}</span>
-            </div>
-        </div>
-    </div>
-));
+
 const StressDashboard = ({ engine }) => {
     const [metrics, setMetrics] = useState(engine?.metrics || {fps:60, eventsPerSec:0, avgLag:12, p99Lag:22, heapUsed:45});
     if (!engine?.active) return null;
     return (
-        <div className="fixed top-20 left-4 z-50 bg-black/90 border border-red-500/50 p-4 rounded-xl shadow-2xl backdrop-blur-md w-64 font-mono text-xs animate-fade-in text-white">
+        <div className="fixed top-20 left-4 z-50 bg-black/90 border border-red-500/50 p-4 backdrop-blur-md w-64 font-mono text-xs animate-fade-in text-slate-300">
             <div className="text-red-500 font-bold uppercase tracking-widest mb-2 border-b border-red-500/30 pb-1">
                 Stress Harness: {engine.currentLevel.toUpperCase()}
             </div>
@@ -48,7 +29,7 @@ const StressDashboard = ({ engine }) => {
                 <div className="text-slate-400">FPS</div>
                 <div className={`text-right font-bold ${metrics.fps < 40 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`}>{metrics.fps}</div>
                 <div className="text-slate-400">Events/s</div>
-                <div className="text-right text-white font-bold">{metrics.eventsPerSec}</div>
+                <div className="text-right text-slate-300 font-bold">{metrics.eventsPerSec}</div>
                 <div className="text-slate-400">Avg Lag</div>
                 <div className={`text-right font-bold ${metrics.avgLag > 30 ? 'text-orange-400' : 'text-emerald-400'}`}>{metrics.avgLag}ms</div>
                 <div className="text-slate-400">P99 Lag</div>
@@ -58,7 +39,7 @@ const StressDashboard = ({ engine }) => {
             </div>
             <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
                 <span className="text-slate-500">Status</span>
-                <span className="bg-red-500/20 text-red-300 px-2 py-0.5 rounded text-[9px] uppercase font-bold animate-pulse">ACTIVE</span>
+                <span className="bg-red-500/20 text-red-300 px-2 py-0.5 text-[9px] uppercase font-bold animate-pulse">ACTIVE</span>
             </div>
         </div>
     );
@@ -77,7 +58,7 @@ const QuarterlyTimeline = ({ symbol }) => {
             .catch(e => { setError(e.message); setLoading(false); });
     }, [symbol]);
     if (loading) return <div className="text-center py-10"><div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/></div>;
-    if (error) return <div className="text-red-400 text-[10px] p-4 bg-red-400/10 rounded">Error: {error}</div>;
+    if (error) return <div className="text-red-400 text-[10px] p-4 bg-red-400/10">Error: {error}</div>;
     if (!data || !data.quarters || data.quarters.length === 0) return <div className="text-slate-500 text-[10px] p-4 italic">No quarterly data available.</div>;
     return (
         <div className="animate-fade-in space-y-4">
@@ -85,44 +66,44 @@ const QuarterlyTimeline = ({ symbol }) => {
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Financial Pulse</div>
                 <div className="flex gap-1">
                     {['revenue', 'profit', 'margin', 'combined'].map(m => (
-                        <button key={m} onClick={() => setViewMode(m)} className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${viewMode === m ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>{m}</button>
+                        <button key={m} onClick={() => setViewMode(m)} className={`px-2 py-0.5 text-[8px] font-bold uppercase transition-all ${viewMode === m ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>{m}</button>
                     ))}
                 </div>
             </div>
             
             {/* Chart */}
-            <div className="h-48 w-full bg-slate-900/40 rounded-xl p-2 border border-white/5">
+            <div className="h-48 w-full bg-white/5 p-2 border border-white/5 rounded-lg">
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data.quarters}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                         <XAxis dataKey="quarter" tick={{ fill: '#64748b', fontSize: 8 }} axisLine={false} tickLine={false} />
                         <YAxis yAxisId="left" hide domain={['auto', 'auto']} />
                         <YAxis yAxisId="right" orientation="right" hide domain={['auto', 'auto']} />
-                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--surface-container-low)', borderColor: 'var(--wire)', borderRadius: '6px', fontSize: '10px', color: 'var(--on-surface)' }} />
                         
                         {viewMode === 'revenue' && (
                             <>
-                                <Bar yAxisId="left" dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                                <Bar yAxisId="left" dataKey="revenue" fill="var(--secondary)" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="var(--on-surface)" strokeWidth={2} dot={{ r: 3, fill: 'var(--on-surface)' }} />
                             </>
                         )}
                         {viewMode === 'profit' && (
                             <>
-                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Line yAxisId="left" type="monotone" dataKey="profit" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                                <Bar yAxisId="left" dataKey="profit" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="profit" stroke="var(--on-surface)" strokeWidth={2} dot={{ r: 3, fill: 'var(--on-surface)' }} />
                             </>
                         )}
                         {viewMode === 'margin' && (
                             <>
-                                <Bar yAxisId="left" dataKey="margin" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Line yAxisId="left" type="monotone" dataKey="margin" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                                <Bar yAxisId="left" dataKey="margin" fill="var(--outline)" radius={[4, 4, 0, 0]} barSize={20} />
+                                <Line yAxisId="left" type="monotone" dataKey="margin" stroke="var(--on-surface)" strokeWidth={2} dot={{ r: 3, fill: 'var(--on-surface)' }} />
                             </>
                         )}
                         {viewMode === 'combined' && (
                             <>
-                                <Bar yAxisId="left" dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={10} />
-                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" radius={[4, 4, 0, 0]} barSize={10} />
-                                <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} />
+                                <Bar yAxisId="left" dataKey="revenue" fill="var(--secondary)" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Bar yAxisId="left" dataKey="profit" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={10} />
+                                <Line yAxisId="right" type="monotone" dataKey="margin" stroke="var(--outline)" strokeWidth={2} dot={{ r: 3, fill: 'var(--outline)' }} />
                             </>
                         )}
                     </ComposedChart>
@@ -130,18 +111,18 @@ const QuarterlyTimeline = ({ symbol }) => {
             </div>
             {/* Key Insights */}
             {data.trends && (
-                <div className="bg-slate-800/40 p-3 rounded-lg border border-slate-700/50">
+                <div className="bg-white/5 p-3 border border-white/10 rounded-lg">
                     <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Key Insights</div>
                     <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                        <div className="bg-white/5 p-2 text-center rounded">
                             <div className="text-[8px] text-slate-500 uppercase">Rev Trend</div>
                             <div className={`text-xs font-bold ${data.trends.revenue_trend === 'ACCELERATING' ? 'text-emerald-400' : data.trends.revenue_trend === 'DECELERATING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.revenue_trend}</div>
                         </div>
-                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                        <div className="bg-white/5 p-2 text-center rounded">
                             <div className="text-[8px] text-slate-500 uppercase">Profit Trend</div>
                             <div className={`text-xs font-bold ${data.trends.profit_trend === 'ACCELERATING' ? 'text-emerald-400' : data.trends.profit_trend === 'DECELERATING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.profit_trend}</div>
                         </div>
-                        <div className="bg-slate-900/50 p-2 rounded text-center">
+                        <div className="bg-white/5 p-2 text-center rounded">
                             <div className="text-[8px] text-slate-500 uppercase">Margin Trend</div>
                             <div className={`text-xs font-bold ${data.trends.margin_trend === 'EXPANDING' ? 'text-emerald-400' : data.trends.margin_trend === 'CONTRACTING' ? 'text-rose-400' : 'text-slate-300'}`}>{data.trends.margin_trend}</div>
                         </div>
@@ -158,9 +139,9 @@ const QuarterlyTimeline = ({ symbol }) => {
                 </div>
             )}
             {/* Detailed Table */}
-            <div className="overflow-x-auto border border-white/5 rounded-lg bg-slate-900/30">
+            <div className="overflow-x-auto border border-white/5 bg-white/5 rounded-lg">
                 <table className="w-full text-left text-[10px]">
-                    <thead className="bg-slate-800/80 text-slate-400">
+                    <thead className="bg-white/5 text-slate-500">
                         <tr>
                             <th className="p-2 font-medium">Quarter</th>
                             <th className="p-2 font-medium text-right">Rev (Cr)</th>
@@ -172,7 +153,7 @@ const QuarterlyTimeline = ({ symbol }) => {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {data.quarters.slice().reverse().map((q, i) => (
-                            <tr key={i} className="hover:bg-slate-800/30 transition-colors">
+                            <tr key={i} className="hover:bg-white/10 transition-colors">
                                 <td className="p-2 font-medium text-slate-300">{q.quarter || q.date}</td>
                                 <td className="p-2 text-right">{q.revenue ? q.revenue.toFixed(2) : '-'}</td>
                                 <td className={`p-2 text-right ${q.revenue_growth_qoq > 0 ? 'text-emerald-400' : q.revenue_growth_qoq < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
@@ -206,32 +187,17 @@ function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
   return (
     <nav className="nav">
       <div className="nav-brand">
-        <div className="nav-sigma">Σ</div>
-        <div>
-          <div className="nav-wordmark">SOVEREIGN</div>
-          <div className="nav-sub">Research Terminal</div>
-        </div>
+        <div style={{fontFamily:'var(--serif)', fontSize:'20px', fontWeight:800, letterSpacing:'1px', color:'var(--t1)'}}>SOVEREIGN</div>
       </div>
-      <div className="nav-tabs">
+      <div className="nav-tabs" style={{justifyContent: 'center'}}>
         {tabs.map(t => (
           <button key={t} className={`nav-tab${activeTab===t?' active':''}`} onClick={()=>onTabChange(t)}>{t}</button>
         ))}
       </div>
       <div className="nav-right">
-        <div className="conn-status">
-          <div className={`conn-dot ${connected?'live':'dead'}`}/>
-          {connected ? `${liveCount} live` : 'offline'}
-        </div>
-        {regime && (
-          <div className={`regime-chip regime-${regime}`}>{regime}</div>
-        )}
-        {vix != null && (
-          <div className="vix-pill">
-            <div className={`vix-dot ${vixClass}`}/>
-            <span style={{color:'var(--t2)',fontSize:'8px'}}>VIX</span>
-            <span style={{color:'var(--gold)',fontWeight:600}}>{vix.toFixed(1)}</span>
-          </div>
-        )}
+        <span className="nav-icon" title="Notifications">🔔</span>
+        <span className="nav-icon" title="Settings">⚙️</span>
+        <span className="nav-icon" title="Profile">👤</span>
       </div>
     </nav>
   );
@@ -241,12 +207,12 @@ function TickerTape({stocks}) {
   const items = stocks.slice(0,20);
   const doubled = [...items, ...items];
   return (
-    <div className="tape">
-      <div className="tape-inner">
+    <div className="ticker-wrap">
+      <div className="ticker-scroll">
         {doubled.map((s, i) => {
           const chg = s.Change_Pct || s.change_pct || 0;
           return (
-            <div className="tape-item" key={i}>
+            <div className="ticker-item" key={i}>
               <span className="t-sym">{s.Symbol || s.symbol}</span>
               <span className="t-px">₹{(s.Price || s.price || 0).toLocaleString('en-IN',{maximumFractionDigits:1})}</span>
               <span className={chg >= 0 ? 't-up' : 't-dn'}>{chg >= 0 ? '+' : ''}{chg.toFixed(1)}%</span>
@@ -259,63 +225,84 @@ function TickerTape({stocks}) {
 }
 function Sidebar({filter, onFilter, regimeData, slippageData, metrics}) {
   return (
-    <div className="sidebar">
-      <div className="sb-section" style={{borderBottom:'none', paddingBottom:0}}>
-        <IntegrityWidget latency={metrics?.latency || 14} queue={metrics?.queue || 0} />
-      </div>
-      <div className="sb-section">
-        <div className="sb-label">View</div>
-        <div className="filter-row">
+    <div className="sidebar p-4 space-y-8 h-full overflow-y-auto">
+      {/* VIEW SECTION */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3">View</div>
+        <div className="flex flex-col space-y-1">
           {FILTERS.map(f => (
-            <button key={f} className={`filter-btn${filter===f?' active':''}`} onClick={()=>onFilter(f)}>
-              {f === 'ALL' ? '◈ All signals' :
-               f === 'BUY' ? '▲ Buy rated' :
-               f === 'WATCH' ? '◎ Watch list' : 
-               f === 'MULTIBAGGER' ? '◉ Multibaggers' : 
-               f === 'MICROCAPS' ? '◒ Microcaps' : 
-               f === 'LIQUIDITY' ? '≎ Liquidity' : '⟲ Recovery'}
-            </button>
+            <div 
+              key={f} 
+              className={`flex items-center px-3 py-2 cursor-pointer border-l-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+                filter === f 
+                  ? 'border-brand-accent bg-brand-base text-slate-800 dark:text-slate-200' 
+                  : 'border-transparent text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+              onClick={() => onFilter(f)}
+            >
+              <span className="mr-3 text-[14px]">
+                {f === 'ALL' ? '◈' :
+                 f === 'BUY' ? '▲' :
+                 f === 'WATCH' ? '◎' : 
+                 f === 'MULTIBAGGER' ? '◉' : 
+                 f === 'MICROCAPS' ? '◒' : 
+                 f === 'LIQUIDITY' ? '≎' : '⟲'}
+              </span>
+              {f === 'ALL' ? 'All Signals' : f}
+            </div>
           ))}
         </div>
       </div>
-      {regimeData && (
-        <div className="sb-section">
-          <div className="sb-label">Market Regime</div>
-          <div className="regime-bar-wrap">
-            <div className="regime-state" style={{color:REGIME_COLORS[regimeData.regime] || 'var(--gold)'}}>{regimeData.regime}</div>
-            <div className="regime-desc">{regimeData.reason || 'Market conditions'}</div>
+
+      {/* MARKET REGIME SECTION */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3">Market Regime</div>
+        {regimeData ? (
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-500 font-bold text-xs uppercase tracking-wide border border-red-500/20">
+            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            {regimeData.regime}
           </div>
-          {regimeData.india_vix != null && (
-            <div className="sb-stat">
-              <span className="sb-key">India VIX</span>
-              <span className={`sb-val ${regimeData.india_vix > 20 ? 'warn' : ''}`}>{regimeData.india_vix.toFixed(1)}</span>
+        ) : (
+          <div className="text-xs text-slate-500 font-mono">Loading...</div>
+        )}
+      </div>
+
+      {/* EXECUTION SECTION */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3">Execution</div>
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <select className="flex-1 bg-transparent border border-brand-border text-xs font-bold text-slate-500 p-2 uppercase outline-none">
+              <option>Small_Cap</option>
+              <option>Mid_Cap</option>
+              <option>Large_Cap</option>
+            </select>
+            <select className="w-16 bg-transparent border border-brand-border text-xs font-bold text-slate-500 p-2 uppercase outline-none">
+              <option>30D</option>
+              <option>90D</option>
+            </select>
+            <select className="w-16 bg-transparent border border-brand-border text-xs font-bold text-slate-500 p-2 uppercase outline-none">
+              <option>ALL</option>
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase">
+              <span>Risk Tolerance</span>
+              <span className="font-mono">High</span>
             </div>
-          )}
-          {regimeData.breadth_ratio != null && (
-            <div className="sb-stat">
-              <span className="sb-key">Breadth</span>
-              <span className={`sb-val ${regimeData.breadth_ratio >= 1 ? 'up' : 'dn'}`}>{regimeData.breadth_ratio.toFixed(2)}</span>
+            <input type="range" className="w-full h-1 bg-brand-border appearance-none cursor-pointer" />
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase">
+              <span>Capital Deploy</span>
+              <span className="font-mono">85%</span>
             </div>
-          )}
-          {regimeData.advance_count != null && (
-            <div className="sb-stat">
-              <span className="sb-key">Adv / Dec</span>
-              <span className="sb-val">{regimeData.advance_count} / {regimeData.decline_count}</span>
-            </div>
-          )}
+            <input type="range" className="w-full h-1 bg-brand-border appearance-none cursor-pointer" />
+          </div>
         </div>
-      )}
-      {slippageData && (
-        <div className="sb-section">
-          <div className="sb-label">Execution</div>
-          {Object.entries(slippageData).slice(0,5).map(([k,v]) => (
-            <div key={k} className="sb-stat">
-              <span className="sb-key">{k.replace(/_/g,' ')}</span>
-              <span className="sb-val">{typeof v === 'number' ? v.toFixed(2) : v}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -349,9 +336,9 @@ function SignalRow({stock, idx, selected, onClick}) {
   return (
     <div className={`trow${selected?' sel':''}`} style={{animationDelay:`${idx*0.03}s`}} onClick={onClick}>
       <div className="rank-n c">{idx+1}</div>
-      <div>
+      <div className="flex flex-col">
         <span className="sym-lg">{sym}</span>
-        <span className="co-sm">{name.length > 22 ? name.slice(0,22)+'…' : name}</span>
+        {name !== sym && <span className="co-sm">{name.length > 22 ? name.slice(0,22)+'…' : name}</span>}
       </div>
       <div className="sect-cell">{sector}</div>
       <div>
@@ -423,7 +410,7 @@ function Drawer({stock, onClose}) {
     fetchAll();
     return ()=>ctrl.abort();
   }, [stock?.Symbol || stock?.symbol]);
-  if (!stock) return <div className="drawer closed"/>;
+  if (!stock) return null;
   const sym = stock.Symbol || stock.symbol || '—';
   const name = stock.Name || stock.name || sym;
   const px = stock.Price || stock.price || 0;
@@ -553,7 +540,7 @@ function Drawer({stock, onClose}) {
                                     <td className="p-2 text-slate-400">{k.replace(/_/g,' ').toUpperCase()}</td>
                                     <td className="p-2 text-right font-mono">{typeof v === 'number' ? v.toFixed(2) : String(v)}</td>
                                     <td className="p-2 text-center">
-                                        <span className={`px-1 py-0.5 rounded-[2px] font-black ${pass ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
+                                        <span className={`px-1 py-0.5 font-black ${pass ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
                                             {pass ? 'PASS' : 'FAIL'}
                                         </span>
                                     </td>
@@ -569,7 +556,7 @@ function Drawer({stock, onClose}) {
             <div className="panel-card">
                 <div className="panel-hdr"><span className="panel-title">Ownership Radar</span></div>
                 <div className="p-4">
-                    <div className="flex h-3 w-full rounded-full overflow-hidden bg-slate-800 mb-4 border border-white/5">
+                    <div className="flex h-3 w-full overflow-hidden bg-slate-800 mb-4 border border-white/5">
                         <div className="bg-emerald-500 h-full" style={{ width: `${ownership.promoters || 50}%` }} />
                         <div className="bg-blue-500 h-full" style={{ width: `${ownership.institutions || 30}%` }} />
                         <div className="bg-slate-700 h-full" style={{ width: `${ownership.public || 20}%` }} />
@@ -578,10 +565,10 @@ function Drawer({stock, onClose}) {
                         {[['Promoters', ownership.promoters, 'bg-emerald-500'], ['Institutions', ownership.institutions, 'bg-blue-500'], ['Public', ownership.public, 'bg-slate-700']].map(([l,v,c]) => (
                             <div key={l}>
                                 <div className="flex items-center gap-1.5 mb-1">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${c}`}></div>
+                                    <div className={`w-1.5 h-1.5 ${c}`}></div>
                                     <span className="text-[8px] text-slate-500 font-bold uppercase">{l}</span>
                                 </div>
-                                <div className="text-xs font-bold text-white">{v ? v.toFixed(1) : '-'}%</div>
+                                <div className="text-xs font-bold text-slate-300">{v ? v.toFixed(1) : '-'}%</div>
                             </div>
                         ))}
                     </div>
@@ -664,6 +651,21 @@ function Drawer({stock, onClose}) {
     </div>
   );
 }
+function AppFooter({ metrics, connected }) {
+  return (
+    <div className="app-footer">
+      <div className="app-footer-left">
+        @ 2024 SOVEREIGN | LATENCY: {metrics?.latency || 12}ms | SYSTEM: {connected ? 'ONLINE' : 'OFFLINE'}
+      </div>
+      <div className="app-footer-right">
+        <span>TERMS</span>
+        <span>DATA</span>
+        <span>HELP</span>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [stocks, setStocks] = useState([]);
   const [regime, setRegime] = useState(null);
@@ -772,7 +774,7 @@ function App() {
   const regimeName = regime?.regime;
   return (
     <>
-      <div onClick={() => setStressActive(!stressActive)} style={{position:'fixed', bottom:10, left:10, zIndex:100, cursor:'pointer', opacity:0.3}}>⚡</div>
+      <div onClick={() => setStressActive(!stressActive)} style={{position:'fixed', bottom:40, left:10, zIndex:100, cursor:'pointer', opacity:0.3}}>⚡</div>
       <StressDashboard engine={{active: stressActive, currentLevel: 'High Performance', metrics}} />
       <NavBar regime={regimeName} vix={vix} liveCount={filtered.length} connected={connected} activeTab={activeTab} onTabChange={setActiveTab}/>
       <TickerTape stocks={stocks}/>
@@ -836,6 +838,7 @@ function App() {
         </div>
         <Drawer stock={selected} onClose={()=>setSelected(null)}/>
       </div>
+      <AppFooter metrics={metrics} connected={connected} />
     </>
   );
 }
@@ -944,7 +947,7 @@ function BacktestView() {
                     <XAxis dataKey="date" hide />
                     <YAxis domain={['auto', 'auto']} hide />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                      contentStyle={{ backgroundColor: 'var(--surface-container-low)', borderColor: 'var(--wire)', borderRadius: '0px', fontSize: '12px', color: 'var(--on-surface)' }}
                       itemStyle={{ color: 'var(--acid)' }}
                     />
                     <Area type="monotone" dataKey="equity" stroke="var(--acid)" fillOpacity={1} fill="url(#colorEquity)" strokeWidth={2} />
@@ -1020,22 +1023,25 @@ function AllocationView() {
   if (loading) return <div className="empty"><div className="loading-dot"/><div className="loading-dot"/><div className="loading-dot"/></div>;
   const weights = data?.weights ? Object.entries(data.weights) : [];
   return (
-    <div style={{padding:30}}>
-      <div className="sb-label" style={{marginBottom:30}}>Hierarchical Risk Parity (HRP) Allocation</div>
-      <div className="panel-card" style={{padding:20, marginBottom:30}}>
-        <div className="text-slate-400 text-[10px] mb-4">Optimal portfolio weights calculated using historical covariance and recursive bisection. Target: Maximum Diversification with Risk Parity.</div>
+    <div>
+      <div className="page-title">SOVEREIGN | ALPHA EDITION</div>
+      <div className="page-subtitle">Optimal portfolio weights calculated using historical covariance and recursive bisection. Target: Maximum Diversification with Risk Parity.</div>
+      
+      <div className="chart-box">
+        <div className="section-label">Hierarchical Risk Parity (HRP) Allocation</div>
         <div className="h-64 w-full">
           <ResponsiveContainer>
             <BarChart data={weights.map(([s,w]) => ({symbol: s, weight: w * 100}))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="symbol" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'Weight (%)', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }} />
-              <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }} />
-              <Bar dataKey="weight" fill="var(--acid)" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+              <XAxis dataKey="symbol" tick={{ fill: 'var(--t2)', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--t2)', fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'Weight (%)', angle: -90, position: 'insideLeft', fill: 'var(--t2)', fontSize: 10 }} />
+              <Tooltip cursor={{fill: 'var(--bg2)'}} contentStyle={{ backgroundColor: 'var(--bg1)', borderColor: 'var(--wire)', borderRadius: '4px', fontSize: '12px', color: 'var(--t1)' }} />
+              <Bar dataKey="weight" fill="var(--acid)" radius={[0, 0, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
+      
       <div className="table-wrap">
         <div className="thead">
           <div>Symbol</div>
@@ -1043,12 +1049,37 @@ function AllocationView() {
           <div className="r">Allocation (₹10L)</div>
         </div>
         {weights.map(([s, w]) => (
-          <div key={s} className="trow" style={{borderBottom:'1px solid var(--wire)'}}>
+          <div key={s} className="trow">
             <div className="sym-lg">{s}</div>
-            <div className="sc-num r" style={{color:'var(--acid)'}}>{(w * 100).toFixed(2)}%</div>
+            <div className="weight-cell r">{(w * 100).toFixed(2)}%</div>
             <div className="px-cell r">₹{(w * 1000000).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <div className="section-label">SIGNAL FEED_</div>
+        <div className="signal-feed-row">
+          <div className="signal-feed-title">
+            <span style={{color: 'var(--acid)', fontWeight: 800}}>+</span>
+            RELIANCE (BUY SIGNAL)
+          </div>
+          <div className="signal-feed-time">09:14:22 EST</div>
+        </div>
+        <div className="signal-feed-row">
+          <div className="signal-feed-title">
+            <span style={{color: 'var(--gold)', fontWeight: 800}}>=</span>
+            HDFCBANK (NEUTRAL)
+          </div>
+          <div className="signal-feed-time">09:12:05 EST</div>
+        </div>
+        <div className="signal-feed-row">
+          <div className="signal-feed-title">
+            <span style={{color: 'var(--rose)', fontWeight: 800}}>-</span>
+            TCS (SELL SIGNAL)
+          </div>
+          <div className="signal-feed-time">09:05:11 EST</div>
+        </div>
       </div>
     </div>
   );

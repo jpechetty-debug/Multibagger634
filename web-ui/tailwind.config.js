@@ -10,12 +10,37 @@ export default {
   theme: {
     extend: {
       colors: {
-        'brand-base': '#0B0F14',
-        'brand-card': '#111827',
-        'brand-border': '#1F2937',
-        'brand-accent': '#00E5FF',
-        'brand-positive': '#00FF88',
-        'brand-negative': '#FF4D4F',
+        'brand-base': 'var(--surface)',
+        'brand-card': 'var(--surface-container-lowest)',
+        'brand-border': 'var(--wire)',
+        'brand-accent': 'var(--primary)',
+        'brand-positive': 'var(--secondary)',
+        'brand-negative': 'var(--error)',
+        white: 'var(--on-surface)',
+        black: 'var(--surface-container-lowest)',
+        slate: {
+          300: 'var(--on-surface)',
+          400: 'var(--on-surface-variant)',
+          500: 'var(--outline)',
+          700: 'var(--surface-container-high)',
+          800: 'var(--surface-container)',
+          900: 'var(--surface-container-low)',
+        },
+        emerald: {
+          400: 'var(--secondary)',
+          500: 'var(--secondary-container)',
+        },
+        rose: {
+          400: 'var(--error)',
+        },
+        red: {
+          300: 'var(--on-error-container)',
+          400: 'var(--error)',
+          500: 'var(--error-container)',
+        },
+        amber: {
+          400: '#b8860b',
+        }
       }
     },
   },
