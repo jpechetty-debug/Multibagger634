@@ -202,7 +202,7 @@ const REGIME_COLORS = {BULL:'var(--acid)',BEAR:'var(--rose)',SIDEWAYS:'var(--gol
 const SCORE_COLOR = s => s >= 75 ? 'var(--acid)' : s >= 55 ? 'var(--gold)' : 'var(--rose)';
 function NavBar({regime, vix, liveCount, connected, activeTab, onTabChange}) {
   const vixClass = !vix ? 'warn' : vix >= 25 ? 'risk' : vix >= 18 ? 'warn' : 'safe';
-  const tabs = ['Overview', 'Market Intelligence', 'Opportunities', 'Elite Picks', 'Discovery', 'Research', 'Portfolio', 'Backtest', 'Settings'];
+  const tabs = ['Overview', 'Market Intelligence', 'Opportunities', 'Elite Picks', 'Discovery', 'Research', 'Regime', 'Alerts', 'Portfolio', 'Backtest', 'Settings'];
   return (
     <nav className="nav">
       <div className="nav-brand">
