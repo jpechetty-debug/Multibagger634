@@ -7,6 +7,12 @@ import {
 } from 'recharts';
 import { marked } from 'marked';
 import { GenericWire } from './components/GenericWire';
+import Overview from './components/Overview';
+import MarketIntelligence from './components/MarketIntelligence';
+import Discovery from './components/Discovery';
+import ScoreChart from './components/ScoreChart';
+import ExplainabilityDrawer from './components/ExplainabilityDrawer';
+import { useWebSocket } from './hooks/useWebSocket';
 import './index.css';
 
 const API = '';
@@ -773,7 +779,10 @@ function App() {
       <div className="body">
         <Sidebar filter={filter} onFilter={f=>{setFilter(f);setSelected(null)}} regimeData={regime} slippageData={slippage} metrics={metrics}/>
         <div className="main">
-          {activeTab === 'Signals' && (
+          {activeTab === 'Overview' && <Overview />}
+          {activeTab === 'Market Intelligence' && <MarketIntelligence />}
+          {activeTab === 'Discovery' && <Discovery />}
+          {activeTab === 'Opportunities' && (
             <>
               <div className="toolbar">
                 <div className="search">
@@ -818,11 +827,12 @@ function App() {
             </>
           )}
           {activeTab === 'Portfolio' && <PortfolioView/>}
-          {activeTab === 'Allocation' && <AllocationView/>}
+          {activeTab === 'Elite Picks' && <AllocationView/>}
           {activeTab === 'Backtest' && <BacktestView/>}
           {activeTab === 'Regime' && <RegimeView data={regime}/>}
           {activeTab === 'Alerts' && <AlertsView/>}
           {activeTab === 'Research' && <ResearchView/>}
+          {activeTab === 'Settings' && <div className="p-8 text-slate-400">Settings panel under construction</div>}
         </div>
         <Drawer stock={selected} onClose={()=>setSelected(null)}/>
       </div>
