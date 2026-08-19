@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "agentMemory": {
+      "command": "node",
+      "args": [
+        "D:\\Tradeidesa\\Multibagger\\.agentMemory\\build\\index.js",
+        "multibagger",
+        "D:\\Tradeidesa\\Multibagger"
+      ]
+    }
+  }
+}

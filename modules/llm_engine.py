@@ -64,16 +64,26 @@ def generate_thesis(stock_data: dict) -> str:
     value_gap  = stock_data.get("Value_Gap%",      stock_data.get("value_gap", 0))
     ml_predict = stock_data.get("ML_Predicted_Return", stock_data.get("ml_predicted_return", "N/A"))
 
-    prompt = f"""You are a senior equity analyst. Generate a concise 3-paragraph investment thesis.
+    prompt = f"""You are a senior quantitative equity analyst for an institutional fund. 
+Your task is to generate a precise, data-driven 3-paragraph investment thesis.
 
+# DATA INPUTS
 Stock: {symbol}
 Sovereign Score: {score}/100 | Rating: {rating}
 Piotroski F-Score: {f_score}/9
 5Y Sales CAGR: {sales_cagr}% | Avg ROE (5Y): {roe}%
 P/E Ratio: {pe} | Value Gap: {value_gap}% | ML Forecast: {ml_predict}%
 
-Focus on: (1) business quality & moat, (2) valuation context, (3) key risks.
-Be specific. Avoid generic statements."""
+# CONSTITUTIONAL PRINCIPLES
+1. Verify factual accuracy: Do NOT invent or estimate any metrics. Use ONLY the data provided above.
+2. Structure: Paragraph 1 (Business Quality & Moat), Paragraph 2 (Valuation Context), Paragraph 3 (Key Risks).
+3. Professionalism: Avoid generic statements like "This is a great stock". Use institutional tone.
+
+# REASONING (Chain-of-Thought)
+Before writing the final thesis, briefly think step-by-step in a <scratchpad> about how the 5Y ROE and Sales CAGR support the moat, and how the Value Gap contextualizes the P/E ratio.
+
+# OUTPUT
+Output the final 3-paragraph thesis enclosed in <thesis> tags."""
 
     try:
         response = requests.post(
@@ -82,13 +92,26 @@ Be specific. Avoid generic statements."""
             timeout=120,
         )
         response.raise_for_status()
-        raw_thesis = response.json().get("response", "").strip()
-        if not raw_thesis:
+        full_response = response.json().get("response", "").strip()
+        if not full_response:
             raise ValueError("Empty response from Ollama")
+        
+        # Extract the content inside <thesis> tags if present
+        import re
+        thesis_match = re.search(r'<thesis>(.*?)</thesis>', full_response, re.DOTALL)
+        if thesis_match:
+            raw_thesis = thesis_match.group(1).strip()
+        else:
+            # Fallback if the LLM failed to use the tags correctly
+            raw_thesis = full_response
+            
+        if not raw_thesis:
+            raise ValueError("Empty thesis content after parsing")
 
         # Validate factual consistency
-        validator = FactValidator(stock_data)
-        patched = patch_thesis(raw_thesis, validator)
+        validator = FactValidator(tolerance_pct=15.0)
+        report = validator.validate(raw_thesis, stock_data)
+        patched = patch_thesis(raw_thesis, report)
         return patched
 
     except requests.exceptions.ConnectionError:
