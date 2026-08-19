@@ -44,7 +44,7 @@ async def generate_premium_html_report(symbol: str):
             return output_path
 
     print(f"Generating Premium Audit Report for {symbol}...")
-    ticker = yf.Ticker(symbol, session=get_yf_session())
+    ticker = await asyncio.to_thread(lambda: yf.Ticker(symbol, session=get_yf_session()))
     
     # Gather data in parallel
     info_task = asyncio.to_thread(lambda: ticker.info)
@@ -68,7 +68,7 @@ async def generate_premium_html_report(symbol: str):
 
     # --- V7.1 FUNDAMENTALS & ANALYST OVERRIDE ---
     from modules.estimates import get_estimate_data
-    est_data = get_estimate_data(symbol)
+    est_data = await asyncio.to_thread(get_estimate_data, symbol)
     f_override = {}
     manual_target = None
     manual_rec = None

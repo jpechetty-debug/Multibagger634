@@ -239,7 +239,7 @@ class PNSEAProvider(DataProvider):
             {},
         )
 
-        yf_t = yf.Ticker(symbol, session=get_yf_session())
+        yf_t = await loop.run_in_executor(self.executor, lambda: yf.Ticker(symbol, session=get_yf_session()))
         fin = await _run_executor_safe(loop, self.executor, lambda: yf_t.financials, pd.DataFrame())
         bs = await _run_executor_safe(loop, self.executor, lambda: yf_t.balance_sheet, pd.DataFrame())
         cf = await _run_executor_safe(loop, self.executor, lambda: yf_t.cash_flow, pd.DataFrame())
@@ -312,7 +312,7 @@ class NSEPythonProvider(DataProvider):
         merged_raw = {**security_info, **raw_info}
         info = _normalize_info(merged_raw, alias_map=_NSEPYTHON_INFO_ALIASES)
 
-        yf_t = yf.Ticker(symbol, session=get_yf_session())
+        yf_t = await loop.run_in_executor(self.executor, lambda: yf.Ticker(symbol, session=get_yf_session()))
         fin = await _run_executor_safe(loop, self.executor, lambda: yf_t.financials, pd.DataFrame())
         bs = await _run_executor_safe(loop, self.executor, lambda: yf_t.balance_sheet, pd.DataFrame())
         cf = await _run_executor_safe(loop, self.executor, lambda: yf_t.cash_flow, pd.DataFrame())
@@ -344,7 +344,7 @@ class YFinanceProvider(DataProvider):
 
     async def fetch_fundamentals(self, symbol: str) -> Dict:
         loop = asyncio.get_running_loop()
-        ticker = yf.Ticker(symbol, session=get_yf_session())
+        ticker = await loop.run_in_executor(self.executor, lambda: yf.Ticker(symbol, session=get_yf_session()))
         info = await _run_executor_safe(loop, self.executor, lambda: ticker.info, {})
         if not isinstance(info, dict):
             info = {}
@@ -642,7 +642,7 @@ class DataManager:
 
         async with self.semaphore:
             loop = asyncio.get_running_loop()
-            ticker = yf.Ticker(symbol, session=get_yf_session())
+            ticker = await loop.run_in_executor(self.executor, lambda: yf.Ticker(symbol, session=get_yf_session()))
             df = pd.DataFrame()
             yf_exc = None
             for attempt in range(2):
@@ -705,7 +705,7 @@ class DataManager:
         """Fetch quarterly financial results"""
         async with self.semaphore:
             loop = asyncio.get_running_loop()
-            ticker = yf.Ticker(symbol, session=get_yf_session())
+            ticker = await loop.run_in_executor(self.executor, lambda: yf.Ticker(symbol, session=get_yf_session()))
             qf = await loop.run_in_executor(self.executor, lambda: ticker.quarterly_financials)
             if qf.empty: return []
             

@@ -143,7 +143,7 @@ async def get_valuation(symbol: str, as_of_date: str | None = None):
         if cached:
             return _normalize_valuation_payload(cached)
 
-        ticker = yf.Ticker(symbol, session=get_yf_session())
+        ticker = await _run_blocking(lambda: yf.Ticker(symbol, session=get_yf_session()))
 
         info = await run_with_exponential_backoff(
             lambda: _run_blocking(lambda: ticker.info),
@@ -397,8 +397,12 @@ async def get_revisions(symbol: str):
     """Fetch analyst recommendations trend and score impact."""
     try:
         symbol = normalize_symbol(symbol)
-        ticker = yf.Ticker(symbol, session=get_yf_session())
-        score_impact, sentiment = await _run_blocking(analyze_revisions, ticker)
+
+        def _analyze():
+            ticker = yf.Ticker(symbol, session=get_yf_session())
+            return analyze_revisions(ticker)
+
+        score_impact, sentiment = await _run_blocking(_analyze)
         return {
             "symbol": symbol,
             "score_impact": score_impact,

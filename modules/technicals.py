@@ -48,7 +48,7 @@ async def get_technical_analysis(symbol):
         if not symbol.endswith(".NS") and not symbol.endswith(".BO"):
             symbol += ".NS"
 
-        ticker = yf.Ticker(symbol, session=get_yf_session())
+        ticker = await asyncio.to_thread(lambda: yf.Ticker(symbol, session=get_yf_session()))
         df = await run_with_exponential_backoff(
             lambda: asyncio.to_thread(lambda: ticker.history(period="6mo")),
             context=f"yfinance technicals for {symbol}",

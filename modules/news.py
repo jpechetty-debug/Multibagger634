@@ -28,7 +28,7 @@ async def get_stock_news(symbol):
     Yahoo provides the articles, AV provides sentiment scoring.
     """
     try:
-        ticker = yf.Ticker(symbol, session=get_yf_session())
+        ticker = await asyncio.to_thread(lambda: yf.Ticker(symbol, session=get_yf_session()))
 
         # Fetch Yahoo news and AV sentiment in parallel
         yahoo_task = run_with_exponential_backoff(
